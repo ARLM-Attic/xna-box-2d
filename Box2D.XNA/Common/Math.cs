@@ -87,7 +87,7 @@ namespace Box2D.XNA
                 return false;
             }
 
-            return float.IsInfinity(x);
+            return !float.IsInfinity(x);
         }
 
         public static bool IsValid(this Vector2 x)
