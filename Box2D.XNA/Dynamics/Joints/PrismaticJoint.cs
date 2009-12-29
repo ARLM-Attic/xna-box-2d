@@ -332,10 +332,6 @@ namespace Box2D.XNA
 	        Body b1 = _bodyA;
 	        Body b2 = _bodyB;
 
-	        // You cannot create a prismatic joint between bodies that
-	        // both have fixed rotation.
-	        Debug.Assert(b1._invI > 0.0f || b2._invI > 0.0f);
-
 	        _localCenterA = b1.GetLocalCenter();
 	        _localCenterB = b2.GetLocalCenter();
 
