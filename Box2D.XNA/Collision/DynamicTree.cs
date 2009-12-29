@@ -59,7 +59,7 @@ namespace Box2D.XNA
     {
         internal static int NullNode = -1;
 
-	    /// ructing the tree initializes the node pool.
+	    /// constructing the tree initializes the node pool.
 	    public DynamicTree()
         {
 	        _root = NullNode;

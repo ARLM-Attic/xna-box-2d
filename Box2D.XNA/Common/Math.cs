@@ -136,21 +136,21 @@ namespace Box2D.XNA
         /// A 2-by-2 matrix. Stored in column-major order.
     public struct Mat22
     {
-	    /// ruct this matrix using columns.
+	    /// construct this matrix using columns.
         public Mat22(Vector2 c1, Vector2 c2)
 	    {
 		    col1 = c1;
 		    col2 = c2;
 	    }
 
-	    /// ruct this matrix using scalars.
+	    /// construct this matrix using scalars.
         public Mat22(float a11, float a12, float a21, float a22)
 	    {
             col1 = new Vector2(a11, a21);
             col2 = new Vector2(a12, a22);
 		}
 
-	    /// ruct this matrix using an angle. This matrix becomes
+	    /// construct this matrix using an angle. This matrix becomes
 	    /// an orthonormal rotation matrix.
         public Mat22(float angle)
 	    {
@@ -235,7 +235,7 @@ namespace Box2D.XNA
     public struct Mat33
     {
 	    
-	    /// ruct this matrix using columns.
+	    /// construct this matrix using columns.
         public Mat33(Vector3 c1, Vector3 c2, Vector3 c3)
 	    {
 		    col1 = c1;

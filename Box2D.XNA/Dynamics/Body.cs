@@ -36,11 +36,11 @@ namespace Box2D.XNA
         Dynamic,
     }
 
-    /// A body definition holds all the data needed to ruct a rigid body.
+    /// A body definition holds all the data needed to construct a rigid body.
     /// You can safely re-use body definitions. Shapes are added to a body after construction.
     public class BodyDef
     {
-        /// This ructor sets the body definition default values.
+        /// This constructor sets the body definition default values.
         public BodyDef()
         {
             userData = null;
