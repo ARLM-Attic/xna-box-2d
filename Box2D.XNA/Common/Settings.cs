@@ -45,11 +45,11 @@ namespace Box2D.XNA
         /// This is a dimensionless multiplier.
         public static float b2_aabbMultiplier = 2.0f;
 
-        /// A small length used as a collision and raint tolerance. Usually it is
+        /// A small length used as a collision and constraint tolerance. Usually it is
         /// chosen to be numerically significant, but visually insignificant.
         public static float b2_linearSlop = 0.005f;
 
-        /// A small angle used as a collision and raint tolerance. Usually it is
+        /// A small angle used as a collision and constraint tolerance. Usually it is
         /// chosen to be numerically significant, but visually insignificant.
         public static float b2_angularSlop = (2.0f / 180.0f * b2_pi);
 

@@ -28,7 +28,7 @@ namespace Box2D.XNA
     /// Prismatic joint definition. This requires defining a line of
     /// motion using an axis and an anchor point. The definition uses local
     /// anchor points and a local axis so that the initial configuration
-    /// can violate the raint slightly. The joint translation is zero
+    /// can violate the constraint slightly. The joint translation is zero
     /// when the local anchor points coincide in world space. Using local
     /// anchors and a local axis helps when saving and loading a game.
     public class PrismaticJointDef : JointDef
@@ -50,14 +50,14 @@ namespace Box2D.XNA
 
 	    /// Initialize the bodies, anchors, axis, and reference angle using the world
 	    /// anchor and world axis.
-        // Linear raint (point-to-line)
+        // Linear constraint (point-to-line)
         // d = p2 - p1 = x2 + r2 - x1 - r1
         // C = dot(perp, d)
         // Cdot = dot(d, cross(w1, perp)) + dot(perp, v2 + cross(w2, r2) - v1 - cross(w1, r1))
         //      = -dot(perp, v1) - dot(cross(d + r1, perp), w1) + dot(perp, v2) + dot(cross(r2, perp), v2)
         // J = [-perp, -cross(d + r1, perp), perp, cross(r2,perp)]
         //
-        // Angular raint
+        // Angular constraint
         // C = a2 - a1 + a_initial
         // Cdot = w2 - w1
         // J = [0 0 -1 0 0 1]
@@ -71,7 +71,7 @@ namespace Box2D.XNA
         // s2 = cross(r2, a) = cross(p2 - x2, a)
 
 
-        // Motor/Limit linear raint
+        // Motor/Limit linear constraint
         // C = dot(ax1, d)
         // Cdot = = -dot(ax1, v1) - dot(cross(d + r1, ax1), w1) + dot(ax1, v2) + dot(cross(r2, ax1), v2)
         // J = [-ax1 -cross(d+r1,ax1) ax1 cross(r2,ax1)]
@@ -367,7 +367,7 @@ namespace Box2D.XNA
                 }
 	        }
 
-	        // Prismatic raint.
+	        // Prismatic constraint.
 	        {
 		        _perp = MathUtils.Multiply(ref xf1.R, _localYAxis1);
 
@@ -462,7 +462,7 @@ namespace Box2D.XNA
 	        Vector2 v2 = b2._linearVelocity;
 	        float w2 = b2._angularVelocity;
 
-	        // Solve linear motor raint.
+	        // Solve linear motor constraint.
 	        if (_enableMotor && _limitState != LimitState.Equal)
 	        {
 		        float Cdot = Vector2.Dot(_axis, v2 - v1) + _a2 * w2 - _a1 * w1;
@@ -487,7 +487,7 @@ namespace Box2D.XNA
 
 	        if (_enableLimit && _limitState != LimitState.Inactive)
 	        {
-		        // Solve prismatic and limit raint in block form.
+		        // Solve prismatic and limit constraint in block form.
 		        float Cdot2 = Vector2.Dot(_axis, v2 - v1) + _a2 * w2 - _a1 * w1;
 		        Vector3 Cdot = new Vector3(Cdot1.X, Cdot1.Y, Cdot2);
 
@@ -524,7 +524,7 @@ namespace Box2D.XNA
 	        }
 	        else
 	        {
-		        // Limit is inactive, just solve the prismatic raint in block form.
+		        // Limit is inactive, just solve the prismatic constraint in block form.
 		        Vector2 df = _K.Solve22(-Cdot1);
 		        _impulse.X += df.X;
 		        _impulse.Y += df.Y;
@@ -557,7 +557,7 @@ namespace Box2D.XNA
 	        Vector2 c2 = b2._sweep.c;
 	        float a2 = b2._sweep.a;
 
-	        // Solve linear limit raint.
+	        // Solve linear limit constraint.
 	        float linearError = 0.0f, angularError = 0.0f;
 	        bool active = false;
 	        float C2 = 0.0f;
@@ -681,7 +681,7 @@ namespace Box2D.XNA
         public Mat33 _K;
         public Vector3 _impulse;
 
-        public float _motorMass;			// effective mass for motor/limit translational raint.
+        public float _motorMass;			// effective mass for motor/limit translational constraint.
         public float _motorImpulse;
 
         public float _lowerTranslation;

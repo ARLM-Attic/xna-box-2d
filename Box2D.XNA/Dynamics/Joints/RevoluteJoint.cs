@@ -28,7 +28,7 @@ namespace Box2D.XNA
     /// Revolute joint definition. This requires defining an
     /// anchor point where the bodies are joined. The definition
     /// uses local anchor points so that the initial configuration
-    /// can violate the raint slightly. You also need to
+    /// can violate the constraint slightly. You also need to
     /// specify the initial relative angle for joint limits. This
     /// helps when saving and loading a game.
     /// The local anchor points are measured from the body's origin
@@ -351,7 +351,7 @@ namespace Box2D.XNA
 	        float m1 = b1._invMass, m2 = b2._invMass;
 	        float i1 = b1._invI, i2 = b2._invI;
 
-	        // Solve motor raint.
+	        // Solve motor constraint.
 	        if (_enableMotor && _limitState != LimitState.Equal)
 	        {
 		        float Cdot = w2 - w1 - _motorSpeed;
@@ -365,7 +365,7 @@ namespace Box2D.XNA
 		        w2 += i2 * impulse;
 	        }
 
-	        // Solve limit raint.
+	        // Solve limit constraint.
 	        if (_enableLimit && _limitState != LimitState.Inactive)
 	        {
                 Transform xf1, xf2;
@@ -375,7 +375,7 @@ namespace Box2D.XNA
 		        Vector2 r1 = MathUtils.Multiply(ref xf1.R, _localAnchor1 - b1.GetLocalCenter());
 		        Vector2 r2 = MathUtils.Multiply(ref xf2.R, _localAnchor2 - b2.GetLocalCenter());
 
-		        // Solve point-to-point raint
+		        // Solve point-to-point constraint
 		        Vector2 Cdot1 = v2 + MathUtils.Cross(w2, r2) - v1 - MathUtils.Cross(w1, r1);
 		        float Cdot2 = w2 - w1;
 		        Vector3 Cdot = new Vector3(Cdot1.X, Cdot1.Y, Cdot2);
@@ -432,7 +432,7 @@ namespace Box2D.XNA
 		        Vector2 r1 = MathUtils.Multiply(ref xf1.R, _localAnchor1 - b1.GetLocalCenter());
 		        Vector2 r2 = MathUtils.Multiply(ref xf2.R, _localAnchor2 - b2.GetLocalCenter());
 
-		        // Solve point-to-point raint
+		        // Solve point-to-point constraint
 		        Vector2 Cdot = v2 + MathUtils.Cross(w2, r2) - v1 - MathUtils.Cross(w1, r1);
 		        Vector2 impulse = _mass.Solve22(-Cdot);
 
@@ -462,7 +462,7 @@ namespace Box2D.XNA
 	        float angularError = 0.0f;
 	        float positionError = 0.0f;
 
-	        // Solve angular limit raint.
+	        // Solve angular limit constraint.
 	        if (_enableLimit && _limitState != LimitState.Inactive)
 	        {
 		        float angle = b2._sweep.a - b1._sweep.a - _referenceAngle;
@@ -501,7 +501,7 @@ namespace Box2D.XNA
 		        b2.SynchronizeTransform();
 	        }
 
-	        // Solve point-to-point raint.
+	        // Solve point-to-point constraint.
 	        {
                 Transform xf1, xf2;
                 b1.GetTransform(out xf1);
@@ -562,8 +562,8 @@ namespace Box2D.XNA
         public Vector3 _impulse;
         public float _motorImpulse;
 
-        public Mat33 _mass;			// effective mass for point-to-point raint.
-        public float _motorMass;	// effective mass for motor/limit angular raint.
+        public Mat33 _mass;			// effective mass for point-to-point constraint.
+        public float _motorMass;	// effective mass for motor/limit angular constraint.
 
         public bool _enableMotor;
         public float _maxMotorTorque;

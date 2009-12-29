@@ -41,7 +41,7 @@ public class MouseJointDef : JointDef
 	/// to coincide with the body anchor initially.
 	public Vector2 target;
 
-	/// The maximum raint force that can be exerted
+	/// The maximum constraint force that can be exerted
 	/// to move the candidate body. Usually you will express
 	/// as some multiple of the weight (multiplier * mass * gravity).
 	public float maxForce;
@@ -54,8 +54,8 @@ public class MouseJointDef : JointDef
 };
 
 /// A mouse joint is used to make a point on a body track a
-/// specified world point. This a soft raint with a maximum
-/// force. This allows the raint to stretch and without
+/// specified world point. This a soft constraint with a maximum
+/// force. This allows the constraint to stretch and without
 /// applying huge forces.
 /// NOTE: this joint is not documented in the manual because it was
 /// developed to be used in the testbed. If you want to learn how to
@@ -255,7 +255,7 @@ public class MouseJoint : Joint
     public Vector2 _target;
     public Vector2 _impulse;
 
-    public Mat22 _mass;		// effective mass for point-to-point raint.
+    public Mat22 _mass;		// effective mass for point-to-point constraint.
     public Vector2 _C;				// position error
     public float _maxForce;
     public float _frequencyHz;
