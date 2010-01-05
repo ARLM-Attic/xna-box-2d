@@ -455,7 +455,7 @@ namespace Box2D.XNA
 	        return alpha;
         }
 
-        static int b2_toiCalls, b2_toiIters, b2_toiMaxIters;
-        static int b2_toiRootIters, b2_toiMaxRootIters;
+        public static int b2_toiCalls, b2_toiIters, b2_toiMaxIters;
+        public static int b2_toiRootIters, b2_toiMaxRootIters;
     }
 }

@@ -695,6 +695,6 @@ namespace Box2D.XNA
 	        }
         }
 
-        static int b2_gjkCalls, b2_gjkIters, b2_gjkMaxIters;
+        public static int b2_gjkCalls, b2_gjkIters, b2_gjkMaxIters;
     }
 }

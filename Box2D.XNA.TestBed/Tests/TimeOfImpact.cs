@@ -46,8 +46,6 @@ namespace Box2D.XNA.TestBed.Tests
 		    return new TimeOfImpact();
 	    }
 
-        static int b2_toiMaxIters, b2_toiMaxRootIters = 0;
-
 	    public override void Step(Framework.Settings settings)
 	    {
 		    base.Step(settings);
@@ -80,7 +78,7 @@ namespace Box2D.XNA.TestBed.Tests
             _debugDraw.DrawString(50, _textLine, "toi = {0:n}", (float)toi);
 		    _textLine += 15;
 
-            _debugDraw.DrawString(50, _textLine, "max toi iters = {0:n}, max root iters = {1:n}", b2_toiMaxIters, b2_toiMaxRootIters);
+            _debugDraw.DrawString(50, _textLine, "max toi iters = {0:n}, max root iters = {1:n}", XNA.TimeOfImpact.b2_toiMaxIters, XNA.TimeOfImpact.b2_toiMaxRootIters);
 		    _textLine += 15;
 
             FixedArray8<Vector2> vertices = new FixedArray8<Vector2>();

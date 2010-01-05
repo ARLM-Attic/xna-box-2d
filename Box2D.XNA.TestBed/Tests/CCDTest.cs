@@ -235,20 +235,20 @@ namespace Box2D.XNA.TestBed.Tests
 
 		    
 
-		    if (b2_gjkCalls > 0)
+		    if (Distance.b2_gjkCalls > 0)
 		    {
                 _debugDraw.DrawString(50, _textLine, "gjk calls = {0:n}, ave gjk iters = {1:n}, max gjk iters = {2:n}",
-				    b2_gjkCalls, b2_gjkIters / (float)b2_gjkCalls, b2_gjkMaxIters);
+				    Distance.b2_gjkCalls, Distance.b2_gjkIters / (float)Distance.b2_gjkCalls, Distance.b2_gjkMaxIters);
 			    _textLine += 15;
 		    }
 
-		    if (b2_toiCalls > 0)
+		    if (XNA.TimeOfImpact.b2_toiCalls > 0)
 		    {
                 _debugDraw.DrawString(50, _textLine, "toi calls = {0:n}, ave toi iters = {1:n}, max toi iters = {2:n}",
-								    b2_toiCalls, b2_toiIters / (float)b2_toiCalls, b2_toiMaxRootIters);
+                                    XNA.TimeOfImpact.b2_toiCalls, XNA.TimeOfImpact.b2_toiIters / (float)XNA.TimeOfImpact.b2_toiCalls, XNA.TimeOfImpact.b2_toiMaxRootIters);
 			    _textLine += 15;
                 _debugDraw.DrawString(50, _textLine, "ave toi root iters = {0:n}, max toi root iters = {1:n}",
-				    b2_toiRootIters / (float)b2_toiCalls, b2_toiMaxRootIters);
+                    XNA.TimeOfImpact.b2_toiRootIters / (float)XNA.TimeOfImpact.b2_toiCalls, XNA.TimeOfImpact.b2_toiMaxRootIters);
 			    _textLine += 15;
 		    }
 	    }
@@ -259,9 +259,5 @@ namespace Box2D.XNA.TestBed.Tests
 	    }
 
 	    float _angularVelocity;
-
-        static int b2_gjkCalls, b2_gjkIters, b2_gjkMaxIters = 0;
-        static int b2_toiCalls, b2_toiIters, b2_toiMaxIters = 0;
-        static int b2_toiRootIters, b2_toiMaxRootIters = 0;
     }
 }
