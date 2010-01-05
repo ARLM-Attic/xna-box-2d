@@ -62,6 +62,7 @@
     <Compile Include="Dynamics\Contacts\PolygonContact.cs" />
     <Compile Include="Dynamics\Contacts\PolygonAndCircleContact.cs" />
     <Compile Include="Dynamics\Joints\FrictionJoint.cs" />
+    <Compile Include="Dynamics\Joints\MaxDistanceJoint.cs" />
     <Compile Include="Dynamics\Joints\WeldJoint.cs" />
     <Compile Include="Dynamics\WorldCallbacks.cs" />
     <Compile Include="Dynamics\Island.cs" />

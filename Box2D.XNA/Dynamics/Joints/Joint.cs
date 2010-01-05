@@ -37,6 +37,7 @@ namespace Box2D.XNA
         Line,
         Weld,
         Friction,
+        MaxDistance,
     };
 
     public enum LimitState
@@ -234,6 +235,11 @@ namespace Box2D.XNA
             case JointType.Friction:
                 {
                     joint = new FrictionJoint((FrictionJointDef)def);
+                }
+                break;
+            case JointType.MaxDistance:
+                {
+                    joint = new MaxDistanceJoint((MaxDistanceJointDef)def);
                 }
                 break;
                 
