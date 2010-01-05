@@ -20,8 +20,9 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
 using System.Diagnostics;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     public class PolygonShape : Shape
@@ -130,7 +131,7 @@ namespace Box2D.XNA
 	        pRef *= 1.0f / count;
         #endif
 
-	        float inv3 = 1.0f / 3.0f;
+	        const float inv3 = 1.0f / 3.0f;
 
 	        for (int i = 0; i < count; ++i)
 	        {
@@ -366,7 +367,7 @@ namespace Box2D.XNA
 	        // It's location doesn't change the result (except for rounding error).
 	        Vector2 pRef = new Vector2(0.0f, 0.0f);
 
-	        float k_inv3 = 1.0f / 3.0f;
+	        const float k_inv3 = 1.0f / 3.0f;
 
 	        for (int i = 0; i < _vertexCount; ++i)
 	        {

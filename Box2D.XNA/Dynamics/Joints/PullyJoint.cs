@@ -20,9 +20,10 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
-using System.Diagnostics;
 using System;
+using System.Diagnostics;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     /// Pulley joint definition. This requires two ground anchors,
@@ -30,7 +31,7 @@ namespace Box2D.XNA
     /// and a pulley ratio.
     public class PulleyJointDef : JointDef
     {
-        internal static float b2_minPulleyLength = 2.0f;
+        internal const float b2_minPulleyLength = 2.0f;
 
 	    public PulleyJointDef()
 	    {

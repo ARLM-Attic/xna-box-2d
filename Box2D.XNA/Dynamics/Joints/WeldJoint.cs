@@ -20,9 +20,9 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
-using System.Diagnostics;
 using System;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     /// Weld joint definition. You need to specify local anchor points
@@ -220,7 +220,7 @@ namespace Box2D.XNA
 	        float C2 = bB._sweep.a - bA._sweep.a - _referenceAngle;
 
 	        // Handle large detachment.
-	        float k_allowedStretch = 10.0f * Settings.b2_linearSlop;
+	        const float k_allowedStretch = 10.0f * Settings.b2_linearSlop;
 	        float positionError = C1.Length();
 	        float angularError = Math.Abs(C2);
 	        if (positionError > k_allowedStretch)

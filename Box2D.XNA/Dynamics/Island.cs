@@ -20,10 +20,10 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
 using System;
 using System.Diagnostics;
-using System.Collections.Generic;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     /// This is an internal class.
@@ -46,18 +46,21 @@ namespace Box2D.XNA
                 _bodies = new Body[bodyCapacity];
             }
 
-            _contacts.Clear();
+            if (_contacts == null || _contacts.Length < contactCapacity)
+            {
+                _contacts = new Contact[contactCapacity * 2];
+            }
 
             if (_joints == null || _joints.Length < jointCapacity)
             {
-                _joints = new Joint[jointCapacity];
+                _joints = new Joint[jointCapacity * 2];
             }
         }
 
 	    public void Clear()
 	    {
 		    _bodyCount = 0;
-            _contacts.Clear();
+	        _contactCount = 0;
 		    _jointCount = 0;
 	    }
 
@@ -88,7 +91,7 @@ namespace Box2D.XNA
 		        b._angularVelocity *= MathUtils.Clamp(1.0f - step.dt * b._angularDamping, 0.0f, 1.0f);
 	        }
 
-            _contactSolver.Reset(ref step, _contacts);
+            _contactSolver.Reset(ref step, _contacts, _contactCount);
 
 	        // Initialize velocity constraints.
             _contactSolver.InitVelocityConstraints(ref step);
@@ -187,8 +190,8 @@ namespace Box2D.XNA
 	        {
 		        float minSleepTime = Settings.b2_maxFloat;
 
-		        float linTolSqr = Settings.b2_linearSleepTolerance * Settings.b2_linearSleepTolerance;
-		        float angTolSqr = Settings.b2_angularSleepTolerance * Settings.b2_angularSleepTolerance;
+		        const float linTolSqr = Settings.b2_linearSleepTolerance * Settings.b2_linearSleepTolerance;
+		        const float angTolSqr = Settings.b2_angularSleepTolerance * Settings.b2_angularSleepTolerance;
 
 		        for (int i = 0; i < _bodyCount; ++i)
 		        {
@@ -231,7 +234,7 @@ namespace Box2D.XNA
 
 	    public void SolveTOI(ref TimeStep subStep)
         {
-            _contactSolver.Reset(ref subStep, _contacts);
+            _contactSolver.Reset(ref subStep, _contacts, _contactCount);
 
             // No warm starting is needed for TOI events because warm
             // starting impulses were applied in the discrete solver.
@@ -303,7 +306,7 @@ namespace Box2D.XNA
 
 
             // Solve position constraints.
-            float k_toiBaumgarte = 0.75f;
+            const float k_toiBaumgarte = 0.75f;
             for (int i = 0; i < subStep.positionIterations; ++i)
             {
                 bool contactsOkay = _contactSolver.SolvePositionConstraints(k_toiBaumgarte);
@@ -332,8 +335,9 @@ namespace Box2D.XNA
 
 	    public void Add(Contact contact)
 	    {
-            _contacts.Add(contact);
-	    }
+            Debug.Assert(_contactCount < _contactCapacity);
+            _contacts[_contactCount++] = contact;
+        }
 
 	    public void Add(Joint joint)
 	    {
@@ -341,15 +345,14 @@ namespace Box2D.XNA
 		    _joints[_jointCount++] = joint;
 	    }
 
-	    public void Report(List<ContactConstraint> constraints)
+	    public void Report(ContactConstraint[] constraints)
         {
             if (_listener == null)
 	        {
 		        return;
 	        }
 
-            int contactCount = _contacts.Count;
-            for (int i = 0; i < contactCount; ++i)
+            for (int i = 0; i < _contactCount; ++i)
 	        {
 		        Contact c = _contacts[i];
 
@@ -370,10 +373,11 @@ namespace Box2D.XNA
 	    public IContactListener _listener;
 
 	    public Body[] _bodies;
-        public List<Contact> _contacts = new List<Contact>(50);
+        public Contact[] _contacts;
 	    public Joint[] _joints;
 
 	    public int _bodyCount;
+        public int _contactCount;
 	    public int _jointCount;
 
 	    public int _bodyCapacity;

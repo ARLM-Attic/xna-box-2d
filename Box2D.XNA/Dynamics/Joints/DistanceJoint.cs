@@ -20,9 +20,10 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
-using System.Diagnostics;
 using System;
+using System.Diagnostics;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     /// Distance joint definition. This requires defining an

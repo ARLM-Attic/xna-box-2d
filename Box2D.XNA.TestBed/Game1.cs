@@ -21,28 +21,18 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using Box2D.XNA.TestBed.Framework;
+using Box2D.XNA.TestBed.Tests;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
-using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Media;
-using Microsoft.Xna.Framework.Net;
-using Microsoft.Xna.Framework.Storage;
-using Box2D.XNA.TestBed.Framework;
-using Box2D.XNA;
-using Box2D.XNA.TestBed.Tests;
-using System.Diagnostics;
 
 namespace Box2D.XNA.TestBed
 {
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class Game1 : Microsoft.Xna.Framework.Game
+    public class Game1 : Game
     {
         public Game1()
         {
@@ -90,9 +80,9 @@ namespace Box2D.XNA.TestBed
             simpleColorEffect.VertexColorEnabled = true;
 
             vertexDecl = new VertexDeclaration(GraphicsDevice, VertexPositionColor.VertexElements);
-            Box2D.XNA.TestBed.Framework.DebugDraw._device = GraphicsDevice;
-            Box2D.XNA.TestBed.Framework.DebugDraw._batch = spriteBatch;
-            Box2D.XNA.TestBed.Framework.DebugDraw._font = spriteFont;
+            Framework.DebugDraw._device = GraphicsDevice;
+            Framework.DebugDraw._batch = spriteBatch;
+            Framework.DebugDraw._font = spriteFont;
 
             oldState = Keyboard.GetState();
             oldGamePad = GamePad.GetState(PlayerIndex.One);
@@ -410,7 +400,7 @@ namespace Box2D.XNA.TestBed
 	    int testCount = 0;
 	    TestEntry entry;
 	    Test test;
-	    Box2D.XNA.TestBed.Framework.Settings settings = new Box2D.XNA.TestBed.Framework.Settings();
+	    Framework.Settings settings = new Framework.Settings();
 	    int width = 640;
 	    int height = 480;
 	    int framePeriod = 16;

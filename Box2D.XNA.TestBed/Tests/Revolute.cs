@@ -20,9 +20,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using System;
 using Box2D.XNA.TestBed.Framework;
-using Box2D.XNA;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -60,11 +58,11 @@ namespace Box2D.XNA.TestBed.Tests
 			    body.SetLinearVelocity(new Vector2(-8.0f * w, 0.0f));
 
 			    rjd.Initialize(ground, body, new Vector2(0.0f, 12.0f));
-			    rjd.motorSpeed = 1.0f * (float)Box2D.XNA.Settings.b2_pi;
+			    rjd.motorSpeed = 1.0f * (float)Settings.b2_pi;
 			    rjd.maxMotorTorque = 10000.0f;
 			    rjd.enableMotor = false;
-			    rjd.lowerAngle = -0.25f * (float)Box2D.XNA.Settings.b2_pi;
-			    rjd.upperAngle = 0.5f * (float)Box2D.XNA.Settings.b2_pi;
+			    rjd.lowerAngle = -0.25f * (float)Settings.b2_pi;
+			    rjd.upperAngle = 0.5f * (float)Settings.b2_pi;
 			    rjd.enableLimit = true;
 			    rjd.collideConnected = true;
 

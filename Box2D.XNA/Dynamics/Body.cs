@@ -21,8 +21,9 @@
 */
 
 using System;
-using Microsoft.Xna.Framework;
 using System.Diagnostics;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     /// The body type.

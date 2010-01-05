@@ -22,15 +22,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Box2D.XNA;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace Box2D.XNA.TestBed.Framework
 {
-    public class DebugDraw : Box2D.XNA.DebugDraw
+    public class DebugDraw : XNA.DebugDraw
     {
         public DebugDraw()
         {

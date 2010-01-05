@@ -21,12 +21,11 @@
 */
 
 using System;
-using Box2D.XNA.TestBed.Framework;
-using Box2D.XNA;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Graphics;
 using System.Diagnostics;
+using Box2D.XNA.TestBed.Framework;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 namespace Box2D.XNA.TestBed.Tests
 {
@@ -189,7 +188,7 @@ namespace Box2D.XNA.TestBed.Tests
 
 		    float x = Rand.RandomFloat(-2.0f, 2.0f);
 		    bd.position = new Vector2(x, 10.0f);
-		    bd.angle = Rand.RandomFloat(-(float)Box2D.XNA.Settings.b2_pi, (float)Box2D.XNA.Settings.b2_pi);
+		    bd.angle = Rand.RandomFloat(-(float)Settings.b2_pi, (float)Settings.b2_pi);
 
 		    if (index == 4)
 		    {

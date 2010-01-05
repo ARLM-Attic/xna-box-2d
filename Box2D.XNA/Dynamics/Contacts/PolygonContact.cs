@@ -21,6 +21,7 @@
 */
 
 using System.Diagnostics;
+
 namespace Box2D.XNA
 {
     internal class PolygonContact : Contact

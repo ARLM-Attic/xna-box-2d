@@ -22,10 +22,11 @@
 
 //#define MATH_OVERLOADS
 
-using Microsoft.Xna.Framework;
-using System.Diagnostics;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     public struct ContactConstraintPoint
@@ -63,18 +64,17 @@ namespace Box2D.XNA
     {
         public ContactSolver() { }
 
-        public void Reset(ref TimeStep step, List<Contact> contacts)
+        public void Reset(ref TimeStep step, Contact[] contacts, int contactCount)
         {
             _step = step;
             _contacts = contacts;
 
-            int contactCount = contacts.Count;
             _constraintCount = contactCount;
 
             // grow the array
-            for (int i = _constraints.Count; i < _constraintCount; i++)
+            if (_constraints == null || _constraints.Length < _constraintCount)
             {
-                _constraints.Add(new ContactConstraint());
+                _constraints = new ContactConstraint[_constraintCount * 2];
             }
 
             for (int i = 0; i < _constraintCount; ++i)
@@ -202,7 +202,7 @@ namespace Box2D.XNA
 			        float k12 = invMassA + invMassB + invIA * rn1A * rn2A + invIB * rn1B * rn2B;
 
 			        // Ensure a reasonable condition number.
-			        float k_maxConditionNumber = 100.0f;
+			        const float k_maxConditionNumber = 100.0f;
 			        if (k11 * k11 < k_maxConditionNumber * (k11 * k22 - k12 * k12))
 			        {
 				        // K is safe to invert.
@@ -814,9 +814,9 @@ namespace Box2D.XNA
         }
 
         public TimeStep _step;
-        public List<ContactConstraint> _constraints = new List<ContactConstraint>(50);
+        public ContactConstraint[] _constraints;
         public int _constraintCount; // collection can be bigger.
-        List<Contact> _contacts;
+        private Contact[] _contacts;
     };
 
     internal struct PositionSolverManifold

@@ -21,8 +21,8 @@
 */
 
 using System;
-using System.Diagnostics;
 using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     internal struct Pair : IComparable<Pair>
@@ -58,7 +58,7 @@ namespace Box2D.XNA
     /// It is up to the client to consume the new pairs and to track subsequent overlap.
     public class BroadPhase
     {
-        internal static int NullProxy = -1;
+        internal const int NullProxy = -1;
 
 	    public BroadPhase()
         {

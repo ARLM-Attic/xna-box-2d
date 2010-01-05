@@ -20,10 +20,8 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using System;
 using Box2D.XNA.TestBed.Framework;
 using Microsoft.Xna.Framework;
-using Box2D.XNA;
 
 namespace Box2D.XNA.TestBed.Tests
 {

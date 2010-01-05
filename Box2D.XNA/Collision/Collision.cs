@@ -20,9 +20,11 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
 	public struct Features
@@ -34,14 +36,14 @@ namespace Box2D.XNA
     };
 
     /// Contact ids to facilitate warm starting.
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Explicit)]
     public struct ContactID
     {
-        [System.Runtime.InteropServices.FieldOffset(0)]
+        [FieldOffset(0)]
         public Features Features;
 
 	    /// The features that intersect to form the contact point
-        [System.Runtime.InteropServices.FieldOffset(0)]
+        [FieldOffset(0)]
         public uint Key;					///< Used to quickly compare contact ids.
     };
 
@@ -237,7 +239,7 @@ namespace Box2D.XNA
 	        Vector2 d = p2 - p1;
 	        Vector2 n = MathUtils.Cross(d, 1.0f);
 
-	        float k_slop = 100.0f * Settings.b2_epsilon;
+	        const float k_slop = 100.0f * Settings.b2_epsilon;
 	        float denom = -Vector2.Dot(r, n);
 
 	        // Cull back facing collision and ignore parallel segments.
@@ -655,8 +657,8 @@ namespace Box2D.XNA
 	        Transform xf1, xf2;
 	        int edge1;		// reference edge
 	        byte flip;
-	        float k_relativeTol = 0.98f;
-	        float k_absoluteTol = 0.001f;
+	        const float k_relativeTol = 0.98f;
+	        const float k_absoluteTol = 0.001f;
 
 	        if (separationB > k_relativeTol * separationA + k_absoluteTol)
 	        {

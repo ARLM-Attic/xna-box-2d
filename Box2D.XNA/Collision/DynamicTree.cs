@@ -20,9 +20,10 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
 using System;
 using System.Diagnostics;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     /// A dynamic AABB tree broad-phase, inspired by Nathanael Presson's btDbvt.
@@ -57,7 +58,7 @@ namespace Box2D.XNA
     /// Nodes are pooled and relocatable, so we use node indices rather than pointers.
     public class DynamicTree
     {
-        internal static int NullNode = -1;
+        internal const int NullNode = -1;
 
 	    /// constructing the tree initializes the node pool.
 	    public DynamicTree()
@@ -203,7 +204,7 @@ namespace Box2D.XNA
 	        return ComputeHeight(_root);
         }
 
-        static int k_stackSize = 128;
+        const int k_stackSize = 128;
         static int[] stack = new int[k_stackSize];
 
 	    /// Query an AABB for overlapping proxies. The callback class

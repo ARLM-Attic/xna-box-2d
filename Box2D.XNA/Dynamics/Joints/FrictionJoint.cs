@@ -21,8 +21,7 @@
 */
 
 using Microsoft.Xna.Framework;
-using System.Diagnostics;
-using System;
+
 namespace Box2D.XNA
 {
     /// Friction joint definition.

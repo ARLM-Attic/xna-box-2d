@@ -22,6 +22,7 @@
 
 using System;
 using System.Diagnostics;
+
 namespace Box2D.XNA
 {
     /// A contact edge is used to connect bodies and contacts together

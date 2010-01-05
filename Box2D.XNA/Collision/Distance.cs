@@ -20,9 +20,10 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using System.Diagnostics;
 using System;
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     /// A distance proxy is used by the GJK algorithm.
@@ -548,7 +549,7 @@ namespace Box2D.XNA
             simplex.ReadCache(ref cache, ref input.proxyA, ref input.transformA, ref input.proxyB, ref input.transformB);
 
 	        // Get simplex vertices as an array.
-	        int k_maxIters = 20;
+	        const int k_maxIters = 20;
 
 	        // These store the vertices of the last simplex so that we
 	        // can check for duplicates and prevent cycling.

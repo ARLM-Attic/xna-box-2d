@@ -21,6 +21,7 @@
 */
 
 using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     /// This holds the mass data computed for a shape.

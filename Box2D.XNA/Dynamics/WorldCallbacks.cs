@@ -20,8 +20,10 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+
 namespace Box2D.XNA
 {
     public interface IDestructionListener
@@ -90,7 +92,7 @@ namespace Box2D.XNA
         public void PostSolve(Contact contact, ref ContactImpulse impulse) { }
     }
 
-    [System.Flags]
+    [Flags]
     public enum DebugDrawFlags
     {
 	    Shape			= (1 << 0), ///< draw shapes

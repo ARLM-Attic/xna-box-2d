@@ -20,9 +20,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using System;
 using Box2D.XNA.TestBed.Framework;
-using Box2D.XNA;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -71,9 +69,9 @@ namespace Box2D.XNA.TestBed.Tests
             input.proxyB.Set(_shapeB);
 		    input.sweepA = sweepA;
 		    input.sweepB = sweepB;
-		    input.tolerance = Box2D.XNA.Settings.b2_linearSlop;
+		    input.tolerance = Settings.b2_linearSlop;
 
-		    float toi = Box2D.XNA.TimeOfImpact.CalculateTimeOfImpact(ref input);
+		    float toi = XNA.TimeOfImpact.CalculateTimeOfImpact(ref input);
 
             _debugDraw.DrawString(50, _textLine, "toi = {0:n}", (float)toi);
 		    _textLine += 15;

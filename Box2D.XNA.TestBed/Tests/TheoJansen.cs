@@ -20,10 +20,8 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using System;
 using Box2D.XNA.TestBed.Framework;
 using Microsoft.Xna.Framework;
-using Box2D.XNA;
 using Microsoft.Xna.Framework.Input;
 
 namespace Box2D.XNA.TestBed.Tests
@@ -208,11 +206,11 @@ namespace Box2D.XNA.TestBed.Tests
 		    CreateLeg(-1.0f, wheelAnchor);
 		    CreateLeg(1.0f, wheelAnchor);
 
-		    _wheel.SetTransform(_wheel.GetPosition(), 120.0f * (float)Box2D.XNA.Settings.b2_pi / 180.0f);
+		    _wheel.SetTransform(_wheel.GetPosition(), 120.0f * (float)Settings.b2_pi / 180.0f);
 		    CreateLeg(-1.0f, wheelAnchor);
 		    CreateLeg(1.0f, wheelAnchor);
 
-		    _wheel.SetTransform(_wheel.GetPosition(), -120.0f * (float)Box2D.XNA.Settings.b2_pi / 180.0f);
+		    _wheel.SetTransform(_wheel.GetPosition(), -120.0f * (float)Settings.b2_pi / 180.0f);
 		    CreateLeg(-1.0f, wheelAnchor);
 		    CreateLeg(1.0f, wheelAnchor);
 	    }

@@ -20,11 +20,8 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using System;
 using Box2D.XNA.TestBed.Framework;
-using Box2D.XNA;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 
 namespace Box2D.XNA.TestBed.Tests
 {
@@ -96,6 +93,7 @@ namespace Box2D.XNA.TestBed.Tests
 			    fd.density = 1.0f;
 
                 BodyDef bd = new BodyDef();
+		        bd.type = BodyType.Dynamic;
 			    bd.position = new Vector2(-8.0f + 8.0f * i, 12.0f);
 			    Body body = _world.CreateBody(bd);
 			    body.CreateFixture(fd);

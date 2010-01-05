@@ -20,9 +20,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using System;
 using Box2D.XNA.TestBed.Framework;
-using Box2D.XNA;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -120,11 +118,11 @@ namespace Box2D.XNA.TestBed.Tests
             }
             if (state.IsKeyDown(Keys.Q))
             {
-                _angleB += 0.1f * (float)Box2D.XNA.Settings.b2_pi;
+                _angleB += 0.1f * (float)Settings.b2_pi;
             }
             if (state.IsKeyDown(Keys.E))
             {
-                _angleB -= 0.1f * (float)Box2D.XNA.Settings.b2_pi;
+                _angleB -= 0.1f * (float)Settings.b2_pi;
             }
 
 		    _transformB.Set(_positionB, _angleB);

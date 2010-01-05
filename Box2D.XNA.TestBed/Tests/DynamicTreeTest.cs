@@ -21,9 +21,8 @@
 */
 
 using System;
-using Box2D.XNA.TestBed.Framework;
 using System.Diagnostics;
-using Box2D.XNA;
+using Box2D.XNA.TestBed.Framework;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;

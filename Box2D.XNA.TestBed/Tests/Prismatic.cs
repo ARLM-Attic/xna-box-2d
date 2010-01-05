@@ -20,9 +20,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using System;
 using Box2D.XNA.TestBed.Framework;
-using Box2D.XNA;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -49,7 +47,7 @@ namespace Box2D.XNA.TestBed.Tests
 			    BodyDef bd = new BodyDef();
                 bd.type = BodyType.Dynamic;
 			    bd.position = new Vector2(-10.0f, 10.0f);
-			    bd.angle = 0.5f * (float)Box2D.XNA.Settings.b2_pi;
+			    bd.angle = 0.5f * (float)Settings.b2_pi;
 			    Body body = _world.CreateBody(bd);
 			    body.CreateFixture(shape, 5.0f);
 

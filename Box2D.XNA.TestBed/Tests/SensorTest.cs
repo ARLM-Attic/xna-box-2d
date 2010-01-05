@@ -20,9 +20,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using System;
 using Box2D.XNA.TestBed.Framework;
-using Box2D.XNA;
 using Microsoft.Xna.Framework;
 
 namespace Box2D.XNA.TestBed.Tests
@@ -139,7 +137,7 @@ namespace Box2D.XNA.TestBed.Tests
 			    Vector2 position = body.GetPosition();
 
 			    Vector2 d = center - position;
-                if (d.LengthSquared() < Box2D.XNA.Settings.b2_epsilon * Box2D.XNA.Settings.b2_epsilon)
+                if (d.LengthSquared() < Settings.b2_epsilon * Settings.b2_epsilon)
 			    {
 				    continue;
 			    }

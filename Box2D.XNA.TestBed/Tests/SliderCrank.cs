@@ -20,9 +20,7 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using System;
 using Box2D.XNA.TestBed.Framework;
-using Box2D.XNA;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -58,7 +56,7 @@ namespace Box2D.XNA.TestBed.Tests
 
                     RevoluteJointDef rjd = new RevoluteJointDef();
 				    rjd.Initialize(prevBody, body, new Vector2(0.0f, 5.0f));
-				    rjd.motorSpeed = 1.0f * (float)Box2D.XNA.Settings.b2_pi;
+				    rjd.motorSpeed = 1.0f * (float)Settings.b2_pi;
 				    rjd.maxMotorTorque = 10000.0f;
 				    rjd.enableMotor = true;
 				    _joint1 = (RevoluteJoint)_world.CreateJoint(rjd);

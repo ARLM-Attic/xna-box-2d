@@ -20,11 +20,10 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
 using System;
 using System.Diagnostics;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System.Collections.Generic;
 
 namespace Box2D.XNA
 {
@@ -1047,7 +1046,7 @@ namespace Box2D.XNA
 			        for (ContactEdge cEdge = b._contactList; cEdge != null; cEdge = cEdge.Next)
 			        {
 				        // Does the TOI island still have space for contacts?
-				        if (_island._contacts.Count == _island._contactCapacity)
+				        if (_island._contactCount == _island._contactCapacity)
 				        {
 					        break;
 				        }
@@ -1170,7 +1169,7 @@ namespace Box2D.XNA
 			        }
 		        }
 
-                int contactCount = _island._contacts.Count;
+                int contactCount = _island._contactCount;
                 for (int i = 0; i < contactCount; ++i)
 		        {
 			        // Allow contacts to participate in future TOI islands.

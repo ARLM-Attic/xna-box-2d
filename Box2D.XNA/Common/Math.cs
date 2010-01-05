@@ -20,9 +20,10 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
 using System;
-using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     public static class MathUtils
@@ -95,12 +96,12 @@ namespace Box2D.XNA
             return IsValid(x.X) && IsValid(x.Y);
         }
 
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
+        [StructLayout(LayoutKind.Explicit)]
         internal struct FloatConverter
         {
-            [System.Runtime.InteropServices.FieldOffset(0)]
+            [FieldOffset(0)]
             public float x;
-            [System.Runtime.InteropServices.FieldOffset(0)]
+            [FieldOffset(0)]
             public int i;
         };
 

@@ -20,9 +20,10 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
-using System.Diagnostics;
 using System;
+using System.Diagnostics;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     /// Input parameters for CalculateTimeOfImpact
@@ -273,7 +274,7 @@ namespace Box2D.XNA
 
 	        float alpha = 0.0f;
 
-	        int k_maxIterations = 1000;	// TODO_ERIN b2Settings
+	        const int k_maxIterations = 1000;
 	        int iter = 0;
 	        float target = 0.0f;
 

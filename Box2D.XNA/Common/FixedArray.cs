@@ -21,6 +21,7 @@
 */
 
 using System;
+
 namespace Box2D.XNA
 {
     public struct FixedArray2<T> where T : struct

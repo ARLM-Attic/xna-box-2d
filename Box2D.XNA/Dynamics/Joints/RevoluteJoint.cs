@@ -20,9 +20,10 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-using Microsoft.Xna.Framework;
-using System.Diagnostics;
 using System;
+using System.Diagnostics;
+using Microsoft.Xna.Framework;
+
 namespace Box2D.XNA
 {
     /// Revolute joint definition. This requires defining an
@@ -517,7 +518,7 @@ namespace Box2D.XNA
 		        float invI1 = b1._invI, invI2 = b2._invI;
 
 		        // Handle large detachment.
-		        float k_allowedStretch = 10.0f * Settings.b2_linearSlop;
+		        const float k_allowedStretch = 10.0f * Settings.b2_linearSlop;
 		        if (C.LengthSquared() > k_allowedStretch * k_allowedStretch)
 		        {
 			        // Use a particle solution (no rotation).
@@ -526,7 +527,7 @@ namespace Box2D.XNA
 			        Debug.Assert(k > Settings.b2_epsilon);
 			        float m = 1.0f / k;
 			        Vector2 impulse2 = m * (-C);
-			        float k_beta = 0.5f;
+			        const float k_beta = 0.5f;
 			        b1._sweep.c -= k_beta * invMass1 * impulse2;
 			        b2._sweep.c += k_beta * invMass2 * impulse2;
 

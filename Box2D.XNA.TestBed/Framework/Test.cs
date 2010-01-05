@@ -21,13 +21,9 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Box2D.XNA;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 namespace Box2D.XNA.TestBed.Framework
 {
@@ -152,7 +148,7 @@ namespace Box2D.XNA.TestBed.Framework
             _debugDraw.DrawString(x, y, title);
         }
 
-	    public virtual void Step(Framework.Settings settings)
+	    public virtual void Step(Settings settings)
         {
             float timeStep = settings.hz > 0.0f ? 1.0f / settings.hz : 0.0f;
 
@@ -220,7 +216,7 @@ namespace Box2D.XNA.TestBed.Framework
 	        if (settings.drawContactPoints > 0)
 	        {
 		        //float k_impulseScale = 0.1f;
-		        float k_axisScale = 0.3f;
+		        const float k_axisScale = 0.3f;
 
 		        for (int i = 0; i < _pointCount; ++i)
 		        {
