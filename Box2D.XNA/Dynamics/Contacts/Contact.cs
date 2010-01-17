@@ -82,7 +82,7 @@ namespace Box2D.XNA
 
             Transform xfA, xfB;
             bodyA.GetTransform(out xfA);
-            bodyA.GetTransform(out xfB);
+            bodyB.GetTransform(out xfB);
 
             worldManifold = new WorldManifold(ref _manifold, ref xfA, shapeA._radius, ref xfB, shapeB._radius);
         }
