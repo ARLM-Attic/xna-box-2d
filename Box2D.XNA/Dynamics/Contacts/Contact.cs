@@ -40,24 +40,20 @@ namespace Box2D.XNA
 
     [Flags]
     public enum ContactFlags
-    {
+    {		
         None = 0,
 
-	    // This contact should not participate in Solve
-	    // The contact equivalent of sensors
-	    Sensor	= 0x0001,
-	    // Do not use TOI solve.
-	    Continuous		= 0x0002,
-	    // Used when crawling contact graph when forming islands.
-	    Island	= 0x0004,
-	    // Used in SolveTOI to indicate the cached toi value is still valid.
-	    Toi		= 0x0008,
-        // TODO: Doc
-	    Touching		= 0x0010,
+        // Used when crawling contact graph when forming islands.
+        Island = 0x0001,
+
+        // Set when the shapes are touching.
+        Touching = 0x0002,
+
         // This contact can be disabled (by user)
-        Enabled = 0x0020,
-	    // This contact needs filtering because a fixture filter was changed.
-	    Filter	= 0x0040,
+        Enabled = 0x0004,
+
+        // This contact needs filtering because a fixture filter was changed.
+        Filter = 0x0008,
     };
 
     /// The class manages contact between two shapes. A contact exists for each overlapping
@@ -87,35 +83,10 @@ namespace Box2D.XNA
             worldManifold = new WorldManifold(ref _manifold, ref xfA, shapeA._radius, ref xfB, shapeB._radius);
         }
 
-        /// Is this contact touching.
+        /// Is this contact touching?
 	    public bool IsTouching()
         {
             return (_flags & ContactFlags.Touching) == ContactFlags.Touching;
-        }
-
-        /// Does this contact generate TOI events for continuous simulation?
-        public bool IsContinuous()
-        {
-            return (_flags & ContactFlags.Continuous) == ContactFlags.Continuous;
-        }
-
-        /// Change this to be a sensor or non-sensor contact.
-        public void SetSensor(bool sensor)
-        {
-            if (sensor)
-            {
-                _flags |= ContactFlags.Sensor;
-            }
-            else
-            {
-                _flags &= ~ContactFlags.Sensor;
-            }
-        }
-
-        /// Is this contact a sensor?
-        public bool IsSensor()
-        {
-            return (_flags & ContactFlags.Sensor) == ContactFlags.Sensor;
         }
 
         /// Enable/disable this contact. This can be used inside the pre-solve
@@ -173,20 +144,6 @@ namespace Box2D.XNA
         {
             _flags = ContactFlags.Enabled;
 
-	        if (fA.IsSensor() || fB.IsSensor())
-	        {
-		        _flags |= ContactFlags.Sensor;
-	        }
-
-            Body bodyA = fA.GetBody();
-            Body bodyB = fB.GetBody();
-
-            if (bodyA.GetType() != BodyType.Dynamic || bodyA.IsBullet || 
-                bodyB.GetType() != BodyType.Dynamic || bodyB.IsBullet)
-            {
-                _flags |= ContactFlags.Continuous;
-            }
-
 	        _fixtureA = fA;
 	        _fixtureB = fB;
 
@@ -204,8 +161,12 @@ namespace Box2D.XNA
 	        _nodeB.Prev = null;
 	        _nodeB.Next = null;
 	        _nodeB.Other = null;
+
+            _toiCount = 0;
         }
 
+        // Update the contact manifold and touching status.
+        // Note: do not assume the fixture AABBs are overlapping or are valid.
 	    internal void Update(IContactListener listener)
         {
             Manifold oldManifold = _manifold;
@@ -216,123 +177,87 @@ namespace Box2D.XNA
             bool touching = false;
             bool wasTouching = (_flags & ContactFlags.Touching) == ContactFlags.Touching;
 
+            bool sensorA = _fixtureA.IsSensor();
+            bool sensorB = _fixtureB.IsSensor();
+            bool sensor = sensorA || sensorB;
+
 	        Body bodyA = _fixtureA.GetBody();
 	        Body bodyB = _fixtureB.GetBody();
+	        Transform xfA; bodyA.GetTransform(out xfA);
+	        Transform xfB; bodyB.GetTransform(out xfB);
 
-            bool aabbOverlap = AABB.TestOverlap(ref _fixtureA._aabb, ref _fixtureB._aabb);
+	        // Is this contact a sensor?
+	        if (sensor)
+	        {
+		        Shape shapeA = _fixtureA.GetShape();
+		        Shape shapeB = _fixtureB.GetShape();
+		        touching = AABB.TestOverlap(shapeA, shapeB, ref xfA, ref xfB);
 
-	        	// Is this contact a sensor?
-            if ((_flags & ContactFlags.Sensor) == ContactFlags.Sensor)
-            {
-                if (aabbOverlap)
-                {
-                    Shape shapeA = _fixtureA.GetShape();
-                    Shape shapeB = _fixtureB.GetShape();
+		        // Sensors don't generate manifolds.
+		        _manifold._pointCount = 0;
+	        }
+	        else
+	        {
+		        Evaluate(ref _manifold, ref xfA, ref xfB);
+		        touching = _manifold._pointCount > 0;
 
-                    Transform xfA;
-                    Transform xfB;
-                    bodyA.GetTransform(out xfA);
-                    bodyB.GetTransform(out xfB);
+		        // Match old contact ids to new contact ids and copy the
+		        // stored impulses to warm start the solver.
+		        for (int i = 0; i < _manifold._pointCount; ++i)
+		        {
+			        ManifoldPoint mp2 = _manifold._points[i];
+			        mp2.NormalImpulse = 0.0f;
+			        mp2.TangentImpulse = 0.0f;
+			        ContactID id2 = mp2.Id;
 
-                    touching = AABB.TestOverlap(shapeA, shapeB, ref xfA, ref xfB);
-                }
+			        for (int j = 0; j < oldManifold._pointCount; ++j)
+			        {
+				        ManifoldPoint mp1 = oldManifold._points[j];
 
-                // Sensors don't generate manifolds.
-                _manifold._pointCount = 0;
-            }
-            else
-            {
-                // Slow contacts don't generate TOI events.
-                if (bodyA.GetType() != BodyType.Dynamic || bodyA.IsBullet ||
-                    bodyB.GetType() != BodyType.Dynamic || bodyB.IsBullet)
-                {
-                    _flags |= ContactFlags.Continuous;
-                }
-                else
-                {
-                    _flags &= ~ContactFlags.Continuous;
-                }
+				        if (mp1.Id.Key == id2.Key)
+				        {
+					        mp2.NormalImpulse = mp1.NormalImpulse;
+					        mp2.TangentImpulse = mp1.TangentImpulse;
+					        break;
+				        }
+			        }
+                    _manifold._points[i] = mp2;
+		        }
 
-                if (aabbOverlap)
-                {
-                    Evaluate();
-                    touching = _manifold._pointCount > 0;
+		        if (touching != wasTouching)
+		        {
+			        bodyA.SetAwake(true);
+			        bodyB.SetAwake(true);
+		        }
+	        }
 
-                    // Match old contact ids to new contact ids and copy the
-                    // stored impulses to warm start the solver.
-                    for (int i = 0; i < _manifold._pointCount; ++i)
-                    {
-                        ManifoldPoint mp2 = _manifold._points[i];
-                        mp2.NormalImpulse = 0.0f;
-                        mp2.TangentImpulse = 0.0f;
-                        ContactID id2 = mp2.Id;
+	        if (touching)
+	        {
+		        _flags |= ContactFlags.Touching;
+	        }
+	        else
+	        {
+		        _flags &= ~ContactFlags.Touching;
+	        }
 
-                        for (int j = 0; j < oldManifold._pointCount; ++j)
-                        {
-                            ManifoldPoint mp1 = oldManifold._points[j];
-
-                            if (mp1.Id.Key == id2.Key)
-                            {
-                                mp2.NormalImpulse = mp1.NormalImpulse;
-                                mp2.TangentImpulse = mp1.TangentImpulse;
-                                break;
-                            }
-                        }
-
-                        _manifold._points[i] = mp2;
-                    }
-                }
-                else
-                {
-                    _manifold._pointCount = 0;
-                }
-
-                if (touching != wasTouching)
-                {
-                    bodyA.SetAwake(true);
-                    bodyB.SetAwake(true);
-                }
-            }
-
-            if (touching)
-            {
-                _flags |= ContactFlags.Touching;
-            }
-            else
-            {
-                _flags &= ~ContactFlags.Touching;
-            }
-
-
-            if (wasTouching == false && touching == true)
+	        if (wasTouching == false && touching == true)
 	        {
 		        listener.BeginContact(this);
 	        }
 
-            if (wasTouching == true && touching == false)
+	        if (wasTouching == true && touching == false)
 	        {
 		        listener.EndContact(this);
 	        }
 
-	        if ((_flags & ContactFlags.Sensor) == 0)
+	        if (sensor == false)
 	        {
 		        listener.PreSolve(this, ref oldManifold);
 	        }
         }
 
-	    internal abstract void Evaluate();
-
-        internal float ComputeTOI(ref Sweep sweepA, ref Sweep sweepB)
-        {
-	        TOIInput input = new TOIInput();
-	        input.proxyA.Set(_fixtureA.GetShape());
-	        input.proxyB.Set(_fixtureB.GetShape());
-	        input.sweepA = sweepA;
-	        input.sweepB = sweepB;
-	        input.tolerance = Settings.b2_linearSlop;
-
-	        return TimeOfImpact.CalculateTimeOfImpact(ref input);
-        }
+        /// Evaluate this contact with your own manifold and transforms.   
+        internal abstract void Evaluate(ref Manifold manifold, ref Transform xfA, ref Transform xfB); 
 
 	    internal static Func<Fixture, Fixture, Contact>[,]  s_registers = new Func<Fixture, Fixture, Contact>[,] 
         {
@@ -380,6 +305,6 @@ namespace Box2D.XNA
 
 	    internal Manifold _manifold;
 
-	    internal float _toi;
+	    internal int _toiCount;
     };
 }

@@ -23,6 +23,7 @@
 using Box2D.XNA.TestBed.Framework;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using System.Diagnostics;
 
 namespace Box2D.XNA.TestBed.Tests
 {
@@ -68,11 +69,18 @@ namespace Box2D.XNA.TestBed.Tests
 				    BodyDef bd = new BodyDef();
                     bd.type = BodyType.Dynamic;
 
+                    int n = j * e_rowCount + i;
+                    Debug.Assert(n < e_rowCount * e_columnCount);
+                    _indices[n] = n;
+                    bd.userData = _indices[n];
+
 				    float x = 0.0f;
 				    //float x = Rand.RandomFloat-0.02f, 0.02f);
 				    //float x = i % 2 == 0 ? -0.025f : 0.025f;
 				    bd.position = new Vector2(xs[j] + x, 0.752f + 1.54f * i);
 				    Body body = _world.CreateBody(bd);
+
+                    _bodies[n] = body;
 
 				    body.CreateFixture(fd);
 			    }
@@ -116,8 +124,39 @@ namespace Box2D.XNA.TestBed.Tests
 	    public override void Step(Framework.Settings settings)
 	    {
 		    base.Step(settings);
-		    _debugDraw.DrawString(50, _textLine, "Press: (,) to launch a bullet.");
-		    _textLine += 15;
+
+            _debugDraw.DrawString(50, _textLine, "Press: (,) to launch a bullet.");
+            
+            if (_stepCount == 300)
+            {
+                if (_bullet != null)
+                {
+                    _world.DestroyBody(_bullet);
+                    _bullet = null;
+                }
+
+                {
+                    CircleShape shape = new CircleShape();
+                    shape._radius = 0.25f;
+
+                    FixtureDef fd = new FixtureDef();
+                    fd.shape = shape;
+                    fd.density = 20.0f;
+                    fd.restitution = 0.05f;
+
+                    BodyDef bd = new BodyDef();
+                    bd.type = BodyType.Dynamic;
+                    bd.bullet = true;
+                    bd.position = new Vector2(-31.0f, 5.0f);
+
+                    _bullet = _world.CreateBody(bd);
+                    _bullet.CreateFixture(fd);
+
+                    _bullet.SetLinearVelocity(new Vector2(400.0f, 0.0f));
+                }
+            }
+
+            _textLine += 15;
 	    }
 
 	    internal static Test Create()
@@ -126,5 +165,9 @@ namespace Box2D.XNA.TestBed.Tests
 	    }
 
 	    Body _bullet;
+        const int e_columnCount = 5;
+		const int e_rowCount = 16;
+	    Body[] _bodies = new Body[e_rowCount * e_columnCount];
+	    int[] _indices = new int[e_rowCount * e_columnCount];
     }
 }

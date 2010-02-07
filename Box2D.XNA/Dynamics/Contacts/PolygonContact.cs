@@ -33,18 +33,11 @@ namespace Box2D.XNA
             Debug.Assert(_fixtureB.ShapeType == ShapeType.Polygon);
         }
 
-        internal override void Evaluate()  
+        internal override void Evaluate(ref Manifold manifold, ref Transform xfA, ref Transform xfB)
         {
-            Body b1 = _fixtureA.GetBody();
-            Body b2 = _fixtureB.GetBody();
-
-            Transform xf1, xf2;
-            b1.GetTransform(out xf1);
-            b2.GetTransform(out xf2);
-
-	        Collision.CollidePolygons(ref _manifold,
-                        (PolygonShape)_fixtureA.GetShape(), ref xf1,
-                        (PolygonShape)_fixtureB.GetShape(), ref xf2);
+	        Collision.CollidePolygons(ref manifold,
+                        (PolygonShape)_fixtureA.GetShape(), ref xfA,
+                        (PolygonShape)_fixtureB.GetShape(), ref xfB);
         }
     }
 }

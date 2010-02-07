@@ -164,7 +164,7 @@ namespace Box2D.XNA
 					    ref DistanceProxy proxyA, ref Transform transformA,
                         ref DistanceProxy proxyB, ref Transform transformB)
 	    {
-		    Debug.Assert(0 <= cache.count && cache.count <= 3);
+		    Debug.Assert(cache.count <= 3);
     		
 		    // Copy data from cache.
 		    _count = cache.count;

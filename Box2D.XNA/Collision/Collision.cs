@@ -92,7 +92,7 @@ namespace Box2D.XNA
     public struct Manifold
     {
 	    public FixedArray2<ManifoldPoint> _points;	        ///< the points of contact
-	    public Vector2 _localPlaneNormal;						///< not use for Type.SeparationFunction.Points
+	    public Vector2 _localNormal;						///< not use for Type.SeparationFunction.Points
 	    public Vector2 _localPoint;							///< usage depends on manifold type
 	    public ManifoldType _type;
 	    public int _pointCount;								///< the number of manifold points
@@ -109,11 +109,11 @@ namespace Box2D.XNA
 					    ref Transform xfA, float radiusA,
 					    ref Transform xfB, float radiusB)
         {
-            _normal = Vector2.Zero;
             _points = new FixedArray2<Vector2>();
 
 	        if (manifold._pointCount == 0)
 	        {
+                _normal = Vector2.UnitY;
 		        return;
 	        }
 
@@ -123,34 +123,29 @@ namespace Box2D.XNA
 		        {
 			        Vector2 pointA = MathUtils.Multiply(ref xfA, manifold._localPoint);
                     Vector2 pointB = MathUtils.Multiply(ref xfB, manifold._points[0].LocalPoint);
-                    Vector2 normal = new Vector2(1.0f, 0.0f);
+                    _normal = new Vector2(1.0f, 0.0f);
 			        if (Vector2.DistanceSquared(pointA, pointB) > Settings.b2_epsilon * Settings.b2_epsilon)
 			        {
-				        normal = pointB - pointA;
-				        normal.Normalize();
+                        _normal = pointB - pointA;
+                        _normal.Normalize();
 			        }
 
-			        _normal = normal;
-
-			        Vector2 cA = pointA + radiusA * normal;
-			        Vector2 cB = pointB - radiusB * normal;
+                    Vector2 cA = pointA + radiusA * _normal;
+                    Vector2 cB = pointB - radiusB * _normal;
 			        _points[0] = 0.5f * (cA + cB);
 		        }
 		        break;
 
 	        case ManifoldType.FaceA:
 		        {
-			        Vector2 normal = MathUtils.Multiply(ref xfA.R, manifold._localPlaneNormal);
+                    _normal = MathUtils.Multiply(ref xfA.R, manifold._localNormal);
 			        Vector2 planePoint = MathUtils.Multiply(ref xfA, manifold._localPoint);
 
-			        // Ensure normal points from A to B.
-			        _normal = normal;
-        			
 			        for (int i = 0; i < manifold._pointCount; ++i)
 			        {
 				        Vector2 clipPoint = MathUtils.Multiply(ref xfB, manifold._points[i].LocalPoint);
-				        Vector2 cA = clipPoint + (radiusA - Vector2.Dot(clipPoint - planePoint, normal)) * normal;
-				        Vector2 cB = clipPoint - radiusB * normal;
+                        Vector2 cA = clipPoint + (radiusA - Vector2.Dot(clipPoint - planePoint, _normal)) * _normal;
+                        Vector2 cB = clipPoint - radiusB * _normal;
 				        _points[i] = 0.5f * (cA + cB);
 			        }
 		        }
@@ -158,21 +153,23 @@ namespace Box2D.XNA
 
 	        case ManifoldType.FaceB:
 		        {
-			        Vector2 normal = MathUtils.Multiply(ref xfB.R, manifold._localPlaneNormal);
+                    _normal = MathUtils.Multiply(ref xfB.R, manifold._localNormal);
 			        Vector2 planePoint = MathUtils.Multiply(ref xfB, manifold._localPoint);
-
-			        // Ensure normal points from A to B.
-			        _normal = -normal;
 
 			        for (int i = 0; i < manifold._pointCount; ++i)
 			        {
                         Vector2 clipPoint = MathUtils.Multiply(ref xfA, manifold._points[i].LocalPoint);
-				        Vector2 cA = clipPoint - radiusA * normal;
-				        Vector2 cB = clipPoint + (radiusB - Vector2.Dot(clipPoint - planePoint, normal)) * normal;
+                        Vector2 cA = clipPoint - radiusA * _normal;
+                        Vector2 cB = clipPoint + (radiusB - Vector2.Dot(clipPoint - planePoint, _normal)) * _normal;
 				        _points[i] = 0.5f * (cA + cB);
 			        }
+                    // Ensure normal points from A to B.
+                    _normal *= -1; 
 		        }
 		        break;
+            default:
+                _normal = Vector2.UnitY;
+                break;
 	        }
         }
 
@@ -480,30 +477,32 @@ namespace Box2D.XNA
 
         /// Compute the collision manifold between two circles.
         public static void CollideCircles(ref Manifold manifold,
-					          CircleShape circle1, ref Transform xf1,
-					          CircleShape circle2, ref Transform xf2)
+					          CircleShape circleA, ref Transform xfA,
+					          CircleShape circleB, ref Transform xfB)
         {
 	        manifold._pointCount = 0;
 
-	        Vector2 p1 = MathUtils.Multiply(ref xf1, circle1._p);
-	        Vector2 p2 = MathUtils.Multiply(ref xf2, circle2._p);
+	        Vector2 pA = MathUtils.Multiply(ref xfA, circleA._p);
+	        Vector2 pB = MathUtils.Multiply(ref xfB, circleB._p);
 
-	        Vector2 d = p2 - p1;
+	        Vector2 d = pB - pA;
 	        float distSqr = Vector2.Dot(d, d);
-	        float radius = circle1._radius + circle2._radius;
+            float rA = circleA._radius;
+            float rB = circleB._radius;
+            float radius = rA + rB;
 	        if (distSqr > radius * radius)
 	        {
 		        return;
 	        }
 
 	        manifold._type = ManifoldType.Circles;
-	        manifold._localPoint = circle1._p;
-	        manifold._localPlaneNormal = Vector2.Zero;
+	        manifold._localPoint = circleA._p;
+	        manifold._localNormal = Vector2.Zero;
 	        manifold._pointCount = 1;
 
             var p0 = manifold._points[0];
 
-            p0.LocalPoint = circle2._p;
+            p0.LocalPoint = circleB._p;
             p0.Id.Key = 0;
 
             manifold._points[0] = p0;
@@ -511,24 +510,24 @@ namespace Box2D.XNA
 
         /// Compute the collision manifold between a polygon and a circle.
         public static void CollidePolygonAndCircle(ref Manifold manifold,
-							           PolygonShape polygon, ref Transform xf1,
-							           CircleShape circle, ref Transform xf2)
+							           PolygonShape polygonA, ref Transform xfA,
+							           CircleShape circleB, ref Transform xfB)
         {
 	        manifold._pointCount = 0;
 
 	        // Compute circle position in the frame of the polygon.
-	        Vector2 c = MathUtils.Multiply(ref xf2, circle._p);
-	        Vector2 cLocal = MathUtils.MultiplyT(ref xf1, c);
+	        Vector2 c = MathUtils.Multiply(ref xfB, circleB._p);
+	        Vector2 cLocal = MathUtils.MultiplyT(ref xfA, c);
 
 	        // Find the min separating edge.
 	        int normalIndex = 0;
 	        float separation = -Settings.b2_maxFloat;
-	        float radius = polygon._radius + circle._radius;
-	        int vertexCount = polygon._vertexCount;
+	        float radius = polygonA._radius + circleB._radius;
+	        int vertexCount = polygonA._vertexCount;
 
 	        for (int i = 0; i < vertexCount; ++i)
 	        {
-                float s = Vector2.Dot(polygon._normals[i], cLocal - polygon._vertices[i]);
+                float s = Vector2.Dot(polygonA._normals[i], cLocal - polygonA._vertices[i]);
 
 		        if (s > radius)
 		        {
@@ -546,20 +545,20 @@ namespace Box2D.XNA
 	        // Vertices that subtend the incident face.
 	        int vertIndex1 = normalIndex;
 	        int vertIndex2 = vertIndex1 + 1 < vertexCount ? vertIndex1 + 1 : 0;
-            Vector2 v1 = polygon._vertices[vertIndex1];
-            Vector2 v2 = polygon._vertices[vertIndex2];
+            Vector2 v1 = polygonA._vertices[vertIndex1];
+            Vector2 v2 = polygonA._vertices[vertIndex2];
 
 	        // If the center is inside the polygon ...
 	        if (separation < Settings.b2_epsilon)
 	        {
 		        manifold._pointCount = 1;
 		        manifold._type = ManifoldType.FaceA;
-                manifold._localPlaneNormal = polygon._normals[normalIndex];
+                manifold._localNormal = polygonA._normals[normalIndex];
 		        manifold._localPoint = 0.5f * (v1 + v2);
 
                 var p0 = manifold._points[0];
 
-                p0.LocalPoint = circle._p;
+                p0.LocalPoint = circleB._p;
                 p0.Id.Key = 0;
 
                 manifold._points[0] = p0;
@@ -579,13 +578,13 @@ namespace Box2D.XNA
 
 		        manifold._pointCount = 1;
 		        manifold._type = ManifoldType.FaceA;
-		        manifold._localPlaneNormal = cLocal - v1;
-		        manifold._localPlaneNormal.Normalize();
+		        manifold._localNormal = cLocal - v1;
+		        manifold._localNormal.Normalize();
 		        manifold._localPoint = v1;
 
                 var p0b = manifold._points[0];
 
-                p0b.LocalPoint = circle._p;
+                p0b.LocalPoint = circleB._p;
                 p0b.Id.Key = 0;
 
                 manifold._points[0] = p0b;
@@ -600,13 +599,13 @@ namespace Box2D.XNA
 
 		        manifold._pointCount = 1;
 		        manifold._type = ManifoldType.FaceA;
-		        manifold._localPlaneNormal = cLocal - v2;
-		        manifold._localPlaneNormal.Normalize();
+		        manifold._localNormal = cLocal - v2;
+		        manifold._localNormal.Normalize();
 		        manifold._localPoint = v2;
 
                 var p0c = manifold._points[0];
 
-                p0c.LocalPoint = circle._p;
+                p0c.LocalPoint = circleB._p;
                 p0c.Id.Key = 0;
 
                 manifold._points[0] = p0c;
@@ -614,7 +613,7 @@ namespace Box2D.XNA
 	        else
 	        {
 		        Vector2 faceCenter = 0.5f * (v1 + v2);
-                float separation2 = Vector2.Dot(cLocal - faceCenter, polygon._normals[vertIndex1]);
+                float separation2 = Vector2.Dot(cLocal - faceCenter, polygonA._normals[vertIndex1]);
 		        if (separation2 > radius)
 		        {
 			        return;
@@ -622,12 +621,12 @@ namespace Box2D.XNA
 
 		        manifold._pointCount = 1;
 		        manifold._type = ManifoldType.FaceA;
-                manifold._localPlaneNormal = polygon._normals[vertIndex1];
+                manifold._localNormal = polygonA._normals[vertIndex1];
 		        manifold._localPoint = faceCenter;
 
                 var p0d = manifold._points[0];
 
-                p0d.LocalPoint = circle._p;
+                p0d.LocalPoint = circleB._p;
                 p0d.Id.Key = 0;
 
                 manifold._points[0] = p0d;
@@ -728,7 +727,7 @@ namespace Box2D.XNA
 	        }
 
 	        // Now clipPoints2 contains the clipped points.
-	        manifold._localPlaneNormal = localNormal;
+	        manifold._localNormal = localNormal;
 	        manifold._localPoint = planePoint;
 
 	        int pointCount = 0;

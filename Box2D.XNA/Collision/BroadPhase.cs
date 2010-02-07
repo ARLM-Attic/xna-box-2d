@@ -185,6 +185,9 @@ namespace Box2D.XNA
 			        ++i;
 		        }
 	        }
+
+            // Try to keep the tree balanced.
+            _tree.Rebalance(4);
         }
 
 	    /// Query an AABB for overlapping proxies. The callback class

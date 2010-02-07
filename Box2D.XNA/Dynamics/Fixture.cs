@@ -116,31 +116,7 @@ namespace Box2D.XNA
 	    /// Set if this fixture is a sensor.
 	    public void SetSensor(bool sensor)
         {
-            if (_isSensor == sensor)
-	        {
-		        return;
-	        }
-
 	        _isSensor = sensor;
-
-	        if (_body == null)
-	        {
-		        return;
-	        }
-
-	        ContactEdge edge = _body.GetContactList();
-	        while (edge != null)
-	        {
-		        Contact contact = edge.Contact;
-		        Fixture fixtureA = contact.GetFixtureA();
-		        Fixture fixtureB = contact.GetFixtureB();
-		        if (fixtureA == this || fixtureB == this)
-		        {
-                    contact.SetSensor(fixtureA.IsSensor() || fixtureB.IsSensor());
-		        }
-
-                edge = edge.Next;
-	        }
         }
 
         /// Set the contact filtering data. This will not update contacts until the next time

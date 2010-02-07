@@ -87,7 +87,7 @@
     <Compile Include="Game1.cs" />
     <Compile Include="Tests\ApplyForce.cs" />
     <Compile Include="Tests\Bridge.cs" />
-    <Compile Include="Tests\CCDTest.cs" />
+    <Compile Include="Tests\ContinuousTest.cs" />
     <Compile Include="Tests\Chain.cs" />
     <Compile Include="Tests\CollisionFiltering.cs" />
     <Compile Include="Tests\CollisionProcessing.cs">
@@ -98,6 +98,7 @@
     </Compile>
     <Compile Include="Tests\BodyTypes.cs" />
     <Compile Include="Tests\Cantilever.cs" />
+    <Compile Include="Tests\EdgeShapes.cs" />
     <Compile Include="Tests\Raycast.cs" />
     <Compile Include="Tests\OneSidedPlatform.cs" />
     <Compile Include="Tests\Confined.cs" />

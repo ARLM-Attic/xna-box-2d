@@ -146,7 +146,7 @@ namespace Box2D.XNA
 	        Body bodyA = fixtureA.GetBody();
 	        Body bodyB = fixtureB.GetBody();
 
-	        if (c._manifold._pointCount > 0)
+	        if (c.IsTouching())
 	        {
 		        ContactListener.EndContact(c);
 	        }

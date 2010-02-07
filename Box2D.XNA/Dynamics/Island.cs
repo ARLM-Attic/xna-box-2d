@@ -91,10 +91,28 @@ namespace Box2D.XNA
 		        b._angularVelocity *= MathUtils.Clamp(1.0f - step.dt * b._angularDamping, 0.0f, 1.0f);
 	        }
 
-            _contactSolver.Reset(ref step, _contacts, _contactCount);
+            // Partition contacts so that contacts with static bodies are solved last.
+	        int i1 = -1;
+	        for (int i2 = 0; i2 < _contactCount; ++i2)
+	        {
+		        Fixture fixtureA = _contacts[i2].GetFixtureA();
+		        Fixture fixtureB = _contacts[i2].GetFixtureB();
+		        Body bodyA = fixtureA.GetBody();
+		        Body bodyB = fixtureB.GetBody();
+                bool nonStatic = bodyA.GetType() != BodyType.Static && bodyB.GetType() != BodyType.Static;
+		        if (nonStatic)
+		        {
+			        ++i1;
+			        //b2Swap(_contacts[i1], _contacts[i2]);
+                    Contact temp = _contacts[i1];
+                    _contacts[i1] = _contacts[i2];
+                    _contacts[i2] = temp;
+		        }
+	        }
 
 	        // Initialize velocity constraints.
-            _contactSolver.InitVelocityConstraints(ref step);
+            _contactSolver.Reset(_contacts, _contactCount, step.dtRatio);
+	        _contactSolver.WarmStart();
 
 	        for (int i = 0; i < _jointCount; ++i)
 	        {
@@ -113,12 +131,7 @@ namespace Box2D.XNA
 	        }
 
 	        // Post-solve (store impulses for warm starting).
-            for (int j = 0; j < _jointCount; ++j)
-            {
-                _joints[j].FinalizeVelocityConstraints();
-            }
-
-            _contactSolver.FinalizeVelocityConstraints();
+            _contactSolver.StoreImpulses();
 
 	        // Integrate positions.
 	        for (int i = 0; i < _bodyCount; ++i)
@@ -134,21 +147,15 @@ namespace Box2D.XNA
 		        Vector2 translation = step.dt * b._linearVelocity;
 		        if (Vector2.Dot(translation, translation) > Settings.b2_maxTranslationSquared)
 		        {
-			        translation.Normalize();
-			        b._linearVelocity = (Settings.b2_maxTranslation * step.inv_dt) * translation;
+			        float ratio = Settings.b2_maxTranslation / translation.Length();
+                    b._linearVelocity *= ratio;
 		        }
 
 		        float rotation = step.dt * b._angularVelocity;
 		        if (rotation * rotation > Settings.b2_maxRotationSquared)
 		        {
-			        if (rotation < 0.0)
-			        {
-				        b._angularVelocity = -step.inv_dt * Settings.b2_maxRotation;
-			        }
-			        else
-			        {
-				        b._angularVelocity = step.inv_dt * Settings.b2_maxRotation;
-			        }
+                    float ratio = Settings.b2_maxRotation / Math.Abs(rotation);
+                    b._angularVelocity *= ratio;
 		        }
 
 		        // Store positions for continuous collision.
@@ -230,100 +237,6 @@ namespace Box2D.XNA
 			        }
 		        }
 	        }
-        }
-
-	    public void SolveTOI(ref TimeStep subStep)
-        {
-            _contactSolver.Reset(ref subStep, _contacts, _contactCount);
-
-            // No warm starting is needed for TOI events because warm
-            // starting impulses were applied in the discrete solver.
-
-            // Warm starting for joints is off for now, but we need to
-            // call this function to compute Jacobians.
-            for (int i = 0; i < _jointCount; ++i)
-            {
-	            _joints[i].InitVelocityConstraints(ref subStep);
-            }
-
-            // Solve velocity constraints.
-            for (int i = 0; i < subStep.velocityIterations; ++i)
-            {
-                _contactSolver.SolveVelocityConstraints();
-	            for (int j = 0; j < _jointCount; ++j)
-	            {
-		            _joints[j].SolveVelocityConstraints(ref subStep);
-	            }
-            }
-
-            // Don't store the TOI contact forces for warm starting
-            // because they can be quite large.
-
-            // Integrate positions.
-            for (int i = 0; i < _bodyCount; ++i)
-            {
-	            Body b = _bodies[i];
-
-                if (b.GetType() == BodyType.Static)
-                {
-                    continue;
-                }
-
-	            // Check for large velocities.
-	            Vector2 translation = subStep.dt * b._linearVelocity;
-	            if (Vector2.Dot(translation, translation) > Settings.b2_maxTranslationSquared)
-	            {
-		            translation.Normalize();
-		            b._linearVelocity = (Settings.b2_maxTranslation * subStep.inv_dt) * translation;
-	            }
-
-	            float rotation = subStep.dt * b._angularVelocity;
-	            if (rotation * rotation > Settings.b2_maxRotationSquared)
-	            {
-		            if (rotation < 0.0)
-		            {
-			            b._angularVelocity = -subStep.inv_dt * Settings.b2_maxRotation;
-		            }
-		            else
-		            {
-			            b._angularVelocity = subStep.inv_dt * Settings.b2_maxRotation;
-		            }
-	            }
-
-	            // Store positions for continuous collision.
-	            b._sweep.c0 = b._sweep.c;
-	            b._sweep.a0 = b._sweep.a;
-
-	            // Integrate
-	            b._sweep.c += subStep.dt * b._linearVelocity;
-	            b._sweep.a += subStep.dt * b._angularVelocity;
-
-	            // Compute new transform
-	            b.SynchronizeTransform();
-
-	            // Note: shapes are synchronized later.
-            }
-
-
-            // Solve position constraints.
-            const float k_toiBaumgarte = 0.75f;
-            for (int i = 0; i < subStep.positionIterations; ++i)
-            {
-                bool contactsOkay = _contactSolver.SolvePositionConstraints(k_toiBaumgarte);
-	            bool jointsOkay = true;
-	            for (int j = 0; j < _jointCount; ++j)
-	            {
-		            bool jointOkay = _joints[j].SolvePositionConstraints(k_toiBaumgarte);
-		            jointsOkay = jointsOkay && jointOkay;
-	            }
-        		
-	            if (contactsOkay && jointsOkay)
-	            {
-		            break;
-	            }
-            }
-
-            Report(_contactSolver._constraints);
         }
 
 	    public void Add(Body body)

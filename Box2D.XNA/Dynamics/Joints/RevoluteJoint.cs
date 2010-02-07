@@ -276,8 +276,12 @@ namespace Box2D.XNA
 	        _mass.col1.Z = _mass.col3.X;
 	        _mass.col2.Z = _mass.col3.Y;
 	        _mass.col3.Z = i1 + i2;
-
-	        _motorMass = 1.0f / (i1 + i2);
+            
+            _motorMass = i1 + i2;   
+            if (_motorMass > 0.0f)   
+            {   
+                _motorMass = 1.0f / _motorMass;  
+            } 
 
 	        if (_enableMotor == false)
 	        {

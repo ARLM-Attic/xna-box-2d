@@ -31,7 +31,7 @@ namespace Box2D.XNA.TestBed.Tests
         TimeOfImpact()
 	    {
 		    {
-			    _shapeA.SetAsBox(10.0f, 0.2f);
+                _shapeA.SetAsBox(0.2f, 1.0f, new Vector2(0.5f, 1.0f), 0.0f);
 		    }
 
 		    {
@@ -49,19 +49,17 @@ namespace Box2D.XNA.TestBed.Tests
 		    base.Step(settings);
 
 		    Sweep sweepA = new Sweep();
-		    sweepA.c0 = new Vector2(0.0f, -0.2f);
+		    sweepA.c0 = Vector2.Zero;
 		    sweepA.a0 = 0.0f;
 		    sweepA.c = sweepA.c0;
 		    sweepA.a = sweepA.a0;
-		    sweepA.t0 = 0.0f;
 		    sweepA.localCenter = Vector2.Zero;
 
 		    Sweep sweepB = new Sweep();
-		    sweepB.c0 = new Vector2(-0.076157160f, 0.16447277f);
-		    sweepB.a0 = -9.4497271f;
-		    sweepB.c = new Vector2(-0.25650328f, -0.63657403f);
-		    sweepB.a = -9.0383911f;
-		    sweepB.t0 = 0.0f;
+            sweepB.c0 = new Vector2(-0.20382018f, 2.1368704f);
+            sweepB.a0 = -3.1664171f;
+            sweepB.c = new Vector2(-0.26699525f, 2.3552670f);
+            sweepB.a = -3.3926492f;
 		    sweepB.localCenter = Vector2.Zero;
 
 		    TOIInput input = new TOIInput();
@@ -69,11 +67,12 @@ namespace Box2D.XNA.TestBed.Tests
             input.proxyB.Set(_shapeB);
 		    input.sweepA = sweepA;
 		    input.sweepB = sweepB;
-		    input.tolerance = Settings.b2_linearSlop;
+            input.tMax = 1.0f;
 
-		    float toi = XNA.TimeOfImpact.CalculateTimeOfImpact(ref input);
+            TOIOutput output;
+		    XNA.TimeOfImpact.CalculateTimeOfImpact(out output, ref input);
 
-            _debugDraw.DrawString(50, _textLine, "toi = {0:n}", (float)toi);
+            _debugDraw.DrawString(50, _textLine, "toi = {0:n}", output.t);
 		    _textLine += 15;
 
             _debugDraw.DrawString(50, _textLine, "max toi iters = {0:n}, max root iters = {1:n}", XNA.TimeOfImpact.b2_toiMaxIters, XNA.TimeOfImpact.b2_toiMaxRootIters);
@@ -91,13 +90,20 @@ namespace Box2D.XNA.TestBed.Tests
 
 		    Transform transformB;
 		    sweepB.GetTransform(out transformB, 0.0f);
+
+            Vector2 localPoint = new Vector2(2.0f, -0.1f);   
+            Vector2 rB = MathUtils.Multiply(ref transformB, localPoint) - sweepB.c0;   
+            float wB = sweepB.a - sweepB.a0;  
+            Vector2 vB = sweepB.c - sweepB.c0;
+            Vector2 v = vB + MathUtils.Cross(wB, rB); 
+
 		    for (int i = 0; i < _shapeB._vertexCount; ++i)
 		    {
 			    vertices[i] = MathUtils.Multiply(ref transformB, _shapeB._vertices[i]);
 		    }
 		    _debugDraw.DrawPolygon(ref vertices, _shapeB._vertexCount, new Color(0.5f, 0.9f, 0.5f));
 
-		    sweepB.GetTransform(out transformB, toi);
+		    sweepB.GetTransform(out transformB, output.t);
 		    for (int i = 0; i < _shapeB._vertexCount; ++i)
 		    {
 			    vertices[i] = MathUtils.Multiply(ref transformB, _shapeB._vertices[i]);

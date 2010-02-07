@@ -344,18 +344,12 @@ namespace Box2D.XNA
 	    /// @param t the new initial time.
 	    public void Advance(float t)
         {
-	        if (t0 < t && 1.0f - t0 > Settings.b2_epsilon)
-	        {
-		        float alpha = (t - t0) / (1.0f - t0);
-		        c0 = (1.0f - alpha) * c0 + alpha * c;
-		        a0 = (1.0f - alpha) * a0 + alpha * a;
-		        t0 = t;
-	        }
+            c0 = (1.0f - t) * c0 + t * c;
+            a0 = (1.0f - t) * a0 + t * a;
         }
 
         public Vector2 localCenter;	///< local center of mass position
         public Vector2 c0, c;		///< center world positions
         public float a0, a;		///< world angles
-        public float t0;			///< time interval = [t0,1], where t0 is in [0,1]
     }
 }

@@ -99,7 +99,7 @@ namespace Box2D.XNA
 
         /// Is this a fast moving body that should be prevented from tunneling through
         /// other moving bodies? Note that all bodies are prevented from tunneling through
-        /// static bodies.
+        /// kinematic and static bodies. This setting is only considered on dynamic bodies.
         /// @warning You should use this flag sparingly since it increases processing time.
         public bool bullet;
 
@@ -124,6 +124,7 @@ namespace Box2D.XNA
         Bullet          = (1 << 3),
         FixedRotation   = (1 << 4),
         Active          = (1 << 5),
+        Toi             = (1 << 6),
     }
 
     public class Body
@@ -224,6 +225,8 @@ namespace Box2D.XNA
 
             return CreateFixture(def);
         }
+
+        public Fixture CreateFixture(Shape shape) { return CreateFixture(shape, 1.0f); }
 
 	    /// Destroy a fixture. This removes the fixture from the broad-phase and
 	    /// destroys all contacts associated with this fixture. This will	
@@ -365,10 +368,17 @@ namespace Box2D.XNA
 	    /// @param v the new linear velocity of the center of mass.
 	    public void SetLinearVelocity(Vector2 v)
         {
-            if (_type != BodyType.Static)
+            if (_type == BodyType.Static)
             {
-                _linearVelocity = v;
+                return;
             }
+            
+            if (Vector2.Dot(v,v) > 0.0f)   
+            {
+                SetAwake(true);   
+            }
+ 
+            _linearVelocity = v;
         }
 
 	    /// Get the linear velocity of the center of mass.
@@ -380,12 +390,19 @@ namespace Box2D.XNA
 
 	    /// Set the angular velocity.
 	    /// @param omega the new angular velocity in radians/second.
-	    public void SetAngularVelocity(float omega)
+	    public void SetAngularVelocity(float w)
         {
-            if (_type != BodyType.Static)
+            if (_type == BodyType.Static)
             {
-                _angularVelocity = omega;
+                return;
             }
+
+            if (w*w > 0.0f)
+            {
+                SetAwake(true);
+            }
+
+            _angularVelocity = w;
         }
 
 	    /// Get the angular velocity.
@@ -735,7 +752,11 @@ namespace Box2D.XNA
         {
             if (flag)
             {
-                _flags |= BodyFlags.Awake;
+                if ((_flags & BodyFlags.Awake) == 0)
+                {
+                    _flags |= BodyFlags.Awake;
+                    _sleepTime = 0.0f;
+                }
             }
             else
             {
@@ -919,7 +940,6 @@ namespace Box2D.XNA
 	        _xf.Position = bd.position;
 	        _xf.R.Set(bd.angle);
 
-	        _sweep.t0 = 1.0f;
 	        _sweep.a0 = _sweep.a = bd.angle;
 	        _sweep.c0 = _sweep.c = MathUtils.Multiply(ref _xf, _sweep.localCenter);
 

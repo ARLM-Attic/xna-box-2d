@@ -240,63 +240,112 @@ namespace Box2D.XNA
         public override bool RayCast(out RayCastOutput output, ref RayCastInput input, ref Transform xf)
         {
             output = new RayCastOutput();
-            float lower = 0.0f, upper = input.maxFraction;
 
             // Put the ray into the polygon's frame of reference.
-	        Vector2 p1 = MathUtils.MultiplyT(ref xf.R, input.p1 - xf.Position);
+            Vector2 p1 = MathUtils.MultiplyT(ref xf.R, input.p1 - xf.Position);
             Vector2 p2 = MathUtils.MultiplyT(ref xf.R, input.p2 - xf.Position);
-	        Vector2 d = p2 - p1;
-	        int index = -1;
+            Vector2 d = p2 - p1;
 
-	        for (int i = 0; i < _vertexCount; ++i)
-	        {
-		        // p = p1 + a * d
-		        // dot(normal, p - v) = 0
-		        // dot(normal, p1 - v) + a * dot(normal, d) = 0
-		        float numerator = Vector2.Dot(_normals[i], _vertices[i] - p1);
-		        float denominator = Vector2.Dot(_normals[i], d);
+            if (_vertexCount == 2)
+            {
+                Vector2 v1 = _vertices[0];
+                Vector2 v2 = _vertices[1];
+                Vector2 normal = _normals[0];
 
-		        if (denominator == 0.0f)
-		        {	
-			        if (numerator < 0.0f)
-			        {
-				        return false;
-			        }
-		        }
-		        else
-		        {
-			        // Note: we want this predicate without division:
-			        // lower < numerator / denominator, where denominator < 0
-			        // Since denominator < 0, we have to flip the inequality:
-			        // lower < numerator / denominator <==> denominator * lower > numerator.
-			        if (denominator < 0.0f && numerator < lower * denominator)
-			        {
-				        // Increase lower.
-				        // The segment enters this half-space.
-				        lower = numerator / denominator;
-				        index = i;
-			        }
-			        else if (denominator > 0.0f && numerator < upper * denominator)
-			        {
-				        // Decrease upper.
-				        // The segment exits this half-space.
-				        upper = numerator / denominator;
-			        }
-		        }
+                // q = p1 + t * d
+                // dot(normal, q - v1) = 0
+                // dot(normal, p1 - v1) + t * dot(normal, d) = 0
+                float numerator = Vector2.Dot(normal, v1 - p1);
+                float denominator = Vector2.Dot(normal, d);
 
-		        if (upper < lower - Settings.b2_epsilon)
-		        {
+                if (denominator == 0.0f)
+                {
                     return false;
-		        }
-	        }
+                }
 
-	        Debug.Assert(0.0f <= lower && lower <= input.maxFraction);
+                float t = numerator / denominator;
+                if (t < 0.0f || 1.0f < t)
+                {
+                    return false;
+                }
 
-	        if (index >= 0)
-	        {
-                output.fraction = lower;
-                output.normal = MathUtils.Multiply(ref xf.R, _normals[index]);
+                Vector2 q = p1 + t * d;
+
+                // q = v1 + s * r
+                // s = dot(q - v1, r) / dot(r, r)
+                Vector2 r = v2 - v1;
+                float rr = Vector2.Dot(r, r);
+                if (rr == 0.0f)
+                {
+                    return false;
+                }
+
+                float s = Vector2.Dot(q - v1, r) / rr;
+                if (s < 0.0f || 1.0f < s)
+                {
+                    return false;
+                }
+
+                output.fraction = t;
+                output.normal = normal;
                 return true;
+            }
+            else
+            {
+                float lower = 0.0f, upper = input.maxFraction;
+
+                int index = -1;
+
+                for (int i = 0; i < _vertexCount; ++i)
+                {
+                    // p = p1 + a * d
+                    // dot(normal, p - v) = 0
+                    // dot(normal, p1 - v) + a * dot(normal, d) = 0
+                    float numerator = Vector2.Dot(_normals[i], _vertices[i] - p1);
+                    float denominator = Vector2.Dot(_normals[i], d);
+
+                    if (denominator == 0.0f)
+                    {
+                        if (numerator < 0.0f)
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        // Note: we want this predicate without division:
+                        // lower < numerator / denominator, where denominator < 0
+                        // Since denominator < 0, we have to flip the inequality:
+                        // lower < numerator / denominator <==> denominator * lower > numerator.
+                        if (denominator < 0.0f && numerator < lower * denominator)
+                        {
+                            // Increase lower.
+                            // The segment enters this half-space.
+                            lower = numerator / denominator;
+                            index = i;
+                        }
+                        else if (denominator > 0.0f && numerator < upper * denominator)
+                        {
+                            // Decrease upper.
+                            // The segment exits this half-space.
+                            upper = numerator / denominator;
+                        }
+                    }
+
+                    if (upper < lower - Settings.b2_epsilon)
+                    {
+                        return false;
+                    }
+                }
+
+                Debug.Assert(0.0f <= lower && lower <= input.maxFraction);
+
+                if (index >= 0)
+                {
+                    output.fraction = lower;
+                    output.normal = MathUtils.Multiply(ref xf.R, _normals[index]);
+                    return true;
+                }
             }
 
             return false;

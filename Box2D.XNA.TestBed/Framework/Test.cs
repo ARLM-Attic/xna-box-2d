@@ -181,7 +181,6 @@ namespace Box2D.XNA.TestBed.Framework
 	        _pointCount = 0;
 
 	        _world.Step(timeStep, settings.velocityIterations, settings.positionIterations);
-            _world.ClearForces();
 
 	        _world.DrawDebugData();
 
@@ -376,7 +375,7 @@ namespace Box2D.XNA.TestBed.Framework
             FixtureDef fd = new FixtureDef();
 	        fd.shape = circle;
 	        fd.density = 20.0f;
-	        fd.restitution = 0.1f;
+	        fd.restitution = 0.0f;
         	
 	        Vector2 minV = position - new Vector2(0.3f,0.3f);
 	        Vector2 maxV = position + new Vector2(0.3f,0.3f);

@@ -68,7 +68,6 @@
     <Compile Include="Tests\Breakable.cs" />
     <Compile Include="Tests\Bridge.cs" />
     <Compile Include="Tests\Cantilever.cs" />
-    <Compile Include="Tests\CCDTest.cs" />
     <Compile Include="Tests\Chain.cs" />
     <Compile Include="Tests\CollisionFiltering.cs" />
     <Compile Include="Tests\CollisionProcessing.cs">
@@ -78,6 +77,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Tests\Confined.cs" />
+    <Compile Include="Tests\ContinuousTest.cs" />
     <Compile Include="Tests\DistanceTest.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -85,6 +85,7 @@
     <Compile Include="Tests\DynamicTreeTest.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Tests\EdgeShapes.cs" />
     <Compile Include="Tests\Gears.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -104,6 +104,7 @@ namespace Box2D.XNA.TestBed.Tests
 
 			    bd.position = new Vector2(0.0f, 2.0f);
                 bd.angle = (float)Settings.b2_pi;
+                bd.allowSleep = false;
 			    _body = _world.CreateBody(bd);
 			    _body.CreateFixture(sd1);
 			    _body.CreateFixture(sd2);

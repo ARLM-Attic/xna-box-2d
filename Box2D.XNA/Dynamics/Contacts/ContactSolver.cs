@@ -38,14 +38,13 @@ namespace Box2D.XNA
         public float tangentImpulse;
         public float normalMass;
         public float tangentMass;
-        public float equalizedMass;
         public float velocityBias;
     };
 
     public struct ContactConstraint
     {
         public FixedArray2<ContactConstraintPoint> points;
-        public Vector2 localPlaneNormal;
+        public Vector2 localNormal;
         public Vector2 localPoint;
         public Vector2 normal;
         public Mat22 normalMass;
@@ -55,7 +54,6 @@ namespace Box2D.XNA
         public ManifoldType type;
         public float radius;
         public float friction;
-        public float restitution;
         public int pointCount;
         public Manifold manifold;
     };
@@ -64,9 +62,8 @@ namespace Box2D.XNA
     {
         public ContactSolver() { }
 
-        public void Reset(ref TimeStep step, Contact[] contacts, int contactCount)
+        public void Reset(Contact[] contacts, int contactCount, float impulseRatio)
         {
-            _step = step;
             _contacts = contacts;
 
             _constraintCount = contactCount;
@@ -111,9 +108,8 @@ namespace Box2D.XNA
 		        cc.normal = worldManifold._normal;
 		        cc.pointCount = manifold._pointCount;
 		        cc.friction = friction;
-		        cc.restitution = restitution;
 
-		        cc.localPlaneNormal = manifold._localPlaneNormal;
+		        cc.localNormal = manifold._localNormal;
 		        cc.localPoint = manifold._localPoint;
 		        cc.radius = radiusA + radiusB;
 		        cc.type = manifold._type;
@@ -123,8 +119,8 @@ namespace Box2D.XNA
 			        ManifoldPoint cp = manifold._points[j];
 			        ContactConstraintPoint ccp = cc.points[j];
 
-                    ccp.normalImpulse = cp.NormalImpulse;
-			        ccp.tangentImpulse = cp.TangentImpulse;
+                    ccp.normalImpulse = impulseRatio * cp.NormalImpulse;
+                    ccp.tangentImpulse = impulseRatio * cp.TangentImpulse;
 
 			        ccp.localPoint = cp.LocalPoint;
 
@@ -145,12 +141,6 @@ namespace Box2D.XNA
 
 			        Debug.Assert(kNormal > Settings.b2_epsilon);
 			        ccp.normalMass = 1.0f / kNormal;
-
-			        float kEqualized = bodyA._mass * bodyA._invMass + bodyB._mass * bodyB._invMass;
-			        kEqualized += bodyA._mass * bodyA._invI * rnA + bodyB._mass * bodyB._invI * rnB;
-
-			        Debug.Assert(kEqualized > Settings.b2_epsilon);
-			        ccp.equalizedMass = 1.0f / kEqualized;
 
 #if MATH_OVERLOADS
 			        Vector2 tangent = MathUtils.Cross(cc.normal, 1.0f);
@@ -175,7 +165,7 @@ namespace Box2D.XNA
 			        float vRel = Vector2.Dot(cc.normal, vB + MathUtils.Cross(wB, ccp.rB) - vA - MathUtils.Cross(wA, ccp.rA));
 			        if (vRel < -Settings.b2_velocityThreshold)
 			        {
-				        ccp.velocityBias = -cc.restitution * vRel;
+				        ccp.velocityBias = -restitution * vRel;
 			        }
 
                     cc.points[j] = ccp;
@@ -221,7 +211,7 @@ namespace Box2D.XNA
 	        }
         }
 
-        public void InitVelocityConstraints(ref TimeStep step)
+        public void WarmStart()
         {
             // Warm start.
             for (int i = 0; i < _constraintCount; ++i)
@@ -242,42 +232,26 @@ namespace Box2D.XNA
                 Vector2 tangent = new Vector2(normal.Y, -normal.X);
 #endif
 
-	            if (step.warmStarting)
+	            for (int j = 0; j < c.pointCount; ++j)
 	            {
-		            for (int j = 0; j < c.pointCount; ++j)
-		            {
-			            ContactConstraintPoint ccp = c.points[j];
-			            ccp.normalImpulse *= step.dtRatio;
-			            ccp.tangentImpulse *= step.dtRatio;
-
+		            ContactConstraintPoint ccp = c.points[j];
 #if MATH_OVERLOADS
-			            Vector2 P = ccp.normalImpulse * normal + ccp.tangentImpulse * tangent;
-			            bodyA._angularVelocity -= invIA * MathUtils.Cross(ccp.rA, P);
-			            bodyA._linearVelocity -= invMassA * P;
-			            bodyB._angularVelocity += invIB * MathUtils.Cross(ccp.rB, P);
-			            bodyB._linearVelocity += invMassB * P;
+		            Vector2 P = ccp.normalImpulse * normal + ccp.tangentImpulse * tangent;
+		            bodyA._angularVelocity -= invIA * MathUtils.Cross(ccp.rA, P);
+		            bodyA._linearVelocity -= invMassA * P;
+		            bodyB._angularVelocity += invIB * MathUtils.Cross(ccp.rB, P);
+		            bodyB._linearVelocity += invMassB * P;
 #else
-                        Vector2 P = new Vector2(ccp.normalImpulse * normal.X + ccp.tangentImpulse * tangent.X,
-                                                ccp.normalImpulse * normal.Y + ccp.tangentImpulse * tangent.Y);
-                        bodyA._angularVelocity -= invIA * (ccp.rA.X * P.Y - ccp.rA.Y * P.X);
-                        bodyA._linearVelocity.X -= invMassA * P.X;
-                        bodyA._linearVelocity.Y -= invMassA * P.Y;
-                        bodyB._angularVelocity += invIB * (ccp.rB.X * P.Y - ccp.rB.Y * P.X);
-                        bodyB._linearVelocity.X += invMassB * P.X;
-                        bodyB._linearVelocity.Y += invMassB * P.Y;
+                    Vector2 P = new Vector2(ccp.normalImpulse * normal.X + ccp.tangentImpulse * tangent.X,
+                                            ccp.normalImpulse * normal.Y + ccp.tangentImpulse * tangent.Y);
+                    bodyA._angularVelocity -= invIA * (ccp.rA.X * P.Y - ccp.rA.Y * P.X);
+                    bodyA._linearVelocity.X -= invMassA * P.X;
+                    bodyA._linearVelocity.Y -= invMassA * P.Y;
+                    bodyB._angularVelocity += invIB * (ccp.rB.X * P.Y - ccp.rB.Y * P.X);
+                    bodyB._linearVelocity.X += invMassB * P.X;
+                    bodyB._linearVelocity.Y += invMassB * P.Y;
 #endif
-                        c.points[j] = ccp;
-		            }
-	            }
-	            else
-	            {
-		            for (int j = 0; j < c.pointCount; ++j)
-		            {
-			            ContactConstraintPoint ccp = c.points[j];
-			            ccp.normalImpulse = 0.0f;
-			            ccp.tangentImpulse = 0.0f;
-                        c.points[j] = ccp;
-		            }
+                    c.points[j] = ccp;
 	            }
 
                 _constraints[i] = c;
@@ -599,7 +573,7 @@ namespace Box2D.XNA
 
 
 				        //
-				        // Case 3: wB = 0 and x1 = 0
+				        // Case 3: vn2 = 0 and x1 = 0
 				        //
 				        // vn1 = a11 * 0 + a12 * x2' + b1' 
 				        //   0 = a21 * 0 + a22 * x2' + b2'
@@ -721,7 +695,7 @@ namespace Box2D.XNA
 	        }
         }
 
-        public void FinalizeVelocityConstraints()
+        public void StoreImpulses()
         {
             for (int i = 0; i < _constraintCount; ++i)
 	        {
@@ -762,16 +736,14 @@ namespace Box2D.XNA
 		        float invMassB = bodyB._mass * bodyB._invMass;
 		        float invIB = bodyB._mass * bodyB._invI;
 
-                PositionSolverManifold psm = new PositionSolverManifold(ref c);
-		        Vector2 normal = psm._normal;
-
 		        // Solve normal constraints
 		        for (int j = 0; j < c.pointCount; ++j)
 		        {
-			        ContactConstraintPoint ccp = c.points[j];
-
-			        Vector2 point = psm._points[j];
-			        float separation = psm._separations[j];
+                    PositionSolverManifold psm = new PositionSolverManifold(ref c, j);
+                    Vector2 normal = psm._normal;
+                    
+                    Vector2 point = psm._point;
+                    float separation = psm._separation; 
 
 			        Vector2 rA = point - bodyA._sweep.c;
 			        Vector2 rB = point - bodyB._sweep.c;
@@ -782,8 +754,14 @@ namespace Box2D.XNA
 			        // Prevent large corrections and allow slop.
                     float C = MathUtils.Clamp(baumgarte *  (separation + Settings.b2_linearSlop), -Settings.b2_maxLinearCorrection, 0.0f);
 
-			        // Compute normal impulse
-			        float impulse = -ccp.equalizedMass * C;
+                    // Compute the effective mass.
+                    float rnA = MathUtils.Cross(rA, normal);
+                    float rnB = MathUtils.Cross(rB, normal);
+                    float K = invMassA + invMassB + invIA * rnA * rnA + invIB * rnB * rnB;
+
+                    // Compute normal impulse
+                    float impulse = K > 0.0f ? -C / K : 0.0f;
+
 #if MATH_OVERLOADS
 			        Vector2 P = impulse * normal;
 
@@ -813,7 +791,6 @@ namespace Box2D.XNA
 	        return minSeparation >= -1.5f * Settings.b2_linearSlop;
         }
 
-        public TimeStep _step;
         public ContactConstraint[] _constraints;
         public int _constraintCount; // collection can be bigger.
         private Contact[] _contacts;
@@ -821,12 +798,8 @@ namespace Box2D.XNA
 
     internal struct PositionSolverManifold
     {
-        internal PositionSolverManifold(ref ContactConstraint cc)
+        internal PositionSolverManifold(ref ContactConstraint cc, int index)
         {
-            _points = new FixedArray2<Vector2>();
-            _separations = new FixedArray2<float>();
-            _normal = new Vector2();
-
 	        Debug.Assert(cc.pointCount > 0);
 
 	        switch (cc.type)
@@ -845,46 +818,45 @@ namespace Box2D.XNA
 				        _normal = new Vector2(1.0f, 0.0f);
 			        }
 
-			        _points[0] = 0.5f * (pointA + pointB);
-			        _separations[0] = Vector2.Dot(pointB - pointA, _normal) - cc.radius;
+			        _point = 0.5f * (pointA + pointB);
+			        _separation = Vector2.Dot(pointB - pointA, _normal) - cc.radius;
 		        }
 		        break;
 
 	        case ManifoldType.FaceA:
 		        {
-			        _normal = cc.bodyA.GetWorldVector(cc.localPlaneNormal);
+			        _normal = cc.bodyA.GetWorldVector(cc.localNormal);
 			        Vector2 planePoint = cc.bodyA.GetWorldPoint(cc.localPoint);
 
-			        for (int i = 0; i < cc.pointCount; ++i)
-			        {
-				        Vector2 clipPoint = cc.bodyB.GetWorldPoint(cc.points[i].localPoint);
-				        _separations[i] = Vector2.Dot(clipPoint - planePoint, _normal) - cc.radius;
-				        _points[i] = clipPoint;
-			        }
+			        Vector2 clipPoint = cc.bodyB.GetWorldPoint(cc.points[index].localPoint);
+			        _separation = Vector2.Dot(clipPoint - planePoint, _normal) - cc.radius;
+			        _point = clipPoint;
 		        }
 		        break;
 
 	        case ManifoldType.FaceB:
 		        {
-			        _normal = cc.bodyB.GetWorldVector(cc.localPlaneNormal);
+			        _normal = cc.bodyB.GetWorldVector(cc.localNormal);
 			        Vector2 planePoint = cc.bodyB.GetWorldPoint(cc.localPoint);
 
-			        for (int i = 0; i < cc.pointCount; ++i)
-			        {
-				        Vector2 clipPoint = cc.bodyA.GetWorldPoint(cc.points[i].localPoint);
-				        _separations[i] = Vector2.Dot(clipPoint - planePoint, _normal) - cc.radius;
-				        _points[i] = clipPoint;
-			        }
+                    Vector2 clipPoint = cc.bodyA.GetWorldPoint(cc.points[index].localPoint);
+			        _separation = Vector2.Dot(clipPoint - planePoint, _normal) - cc.radius;
+			        _point = clipPoint;
 
-			        // Ensure normal points from A to B
+                    // Ensure normal points from A to B
 			        _normal = -_normal;
 		        }
 		        break;
+            default:
+                _normal = Vector2.Zero;
+                _point = Vector2.Zero;
+                _separation = 0.0f;
+                break;
 	        }
         }
 
         internal Vector2 _normal;
-        internal FixedArray2<Vector2> _points;
-        internal FixedArray2<float> _separations;
+        internal Vector2 _point;
+        internal float _separation;
     };
 }

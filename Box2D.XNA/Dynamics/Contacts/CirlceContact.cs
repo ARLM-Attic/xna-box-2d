@@ -33,15 +33,9 @@ namespace Box2D.XNA
 	        Debug.Assert(_fixtureB.ShapeType == ShapeType.Circle);
         }
 
-	    internal override void Evaluate()  
+	    internal override void Evaluate(ref Manifold manifold, ref Transform xfA, ref Transform xfB)
         {
-	        Body bodyA = _fixtureA.GetBody();
-	        Body bodyB = _fixtureB.GetBody();
-            Transform xfA, xfB;
-            bodyA.GetTransform(out xfA);
-            bodyB.GetTransform(out xfB);
-
-	        Collision.CollideCircles(ref _manifold,
+	        Collision.CollideCircles(ref manifold,
 						        (CircleShape)_fixtureA.GetShape(), ref xfA,
                                 (CircleShape)_fixtureB.GetShape(), ref xfB);
         }

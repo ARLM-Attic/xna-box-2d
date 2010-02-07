@@ -30,8 +30,9 @@ namespace Box2D.XNA
     [Flags]
     public enum WorldFlags
     {
-        NewFixture = (1 << 0),
-        Locked = (1 << 1),
+        NewFixture  = (1 << 0),
+        Locked      = (1 << 1),
+        ClearForces = (1 << 2),
     };
 
     /// The world class manages all physics entities, dynamic simulation,
@@ -49,6 +50,8 @@ namespace Box2D.XNA
 
             _allowSleep = doSleep;
             Gravity = gravity;
+
+            _flags = WorldFlags.ClearForces;
 
             _queryAABBCallbackWrapper = QueryAABBCallbackWrapper;
             _rayCastCallbackWrapper = RayCastCallbackWrapper;
@@ -403,7 +406,7 @@ namespace Box2D.XNA
 	        // Handle TOI events.
 	        if (ContinuousPhysics && step.dt > 0.0f)
 	        {
-		        SolveTOI(ref step);
+		        SolveTOI();
 	        }
 
 	        if (step.dt > 0.0f)
@@ -411,11 +414,18 @@ namespace Box2D.XNA
 		        _inv_dt0 = step.inv_dt;
 	        }
 
+            if ((_flags & WorldFlags.ClearForces) != 0)
+            {
+                ClearForces();
+            }
+
 	        _flags &= ~WorldFlags.Locked;
         }
 
         /// Call this after you are done with time steps to clear the forces. You normally
-        /// call this after each call to Step, unless you are performing sub-steps.
+	    /// call this after each call to Step, unless you are performing sub-steps. By default,
+	    /// forces will be automatically cleared, so you don't need to call this function.
+	    /// @see SetAutoClearForces
         public void ClearForces()
         {
             for (Body body = _bodyList; body != null; body = body.GetNext())
@@ -423,6 +433,25 @@ namespace Box2D.XNA
                 body._force = Vector2.Zero;
                 body._torque = 0.0f;
             }
+        }
+
+        /// Set flag to control automatic clearing of forces after each time step.
+	    void SetAutoClearForces(bool flag)
+        {
+            if (flag)
+            {
+                _flags |= WorldFlags.ClearForces;
+            }
+            else
+            {
+                _flags &= ~WorldFlags.ClearForces;
+            }
+        }
+
+	    /// Get the flag that controls automatic clearing of forces after each time step.
+        bool GetAutoClearForces()
+        {
+            return (_flags & WorldFlags.ClearForces) == WorldFlags.ClearForces;
         }
 
 	    /// Call this to draw shapes and other debug draw data.
@@ -741,11 +770,8 @@ namespace Box2D.XNA
 			        _island.Add(b);
 
 			        // Make sure the body is awake.
-                    if (b.IsAwake() == false)
-                    {
-                        b.SetAwake(true);
-                    }
-
+                    b.SetAwake(true);
+                    
 			        // To keep islands as small as possible, we don't
 			        // propagate islands across static bodies.
 			        if (b.GetType() == BodyType.Static)
@@ -756,20 +782,30 @@ namespace Box2D.XNA
 			        // Search all contacts connected to this body.
 			        for (ContactEdge ce = b._contactList; ce != null; ce = ce.Next)
 			        {
+                        Contact contact = ce.Contact;
+
 				        // Has this contact already been added to an island?
-				        if ((ce.Contact._flags & ContactFlags.Island) != ContactFlags.None)
+                        if ((contact._flags & ContactFlags.Island) != ContactFlags.None)
 				        {
 					        continue;
 				        }
 
                         // Is this contact solid and touching?
-                        if (ce.Contact.IsSensor() || !ce.Contact.IsEnabled() || !ce.Contact.IsTouching())
+                        if (!ce.Contact.IsEnabled() || !ce.Contact.IsTouching())
 				        {
 					        continue;
 				        }
 
-                        _island.Add(ce.Contact);
-				        ce.Contact._flags |= ContactFlags.Island;
+                        // Skip sensors.
+                        bool sensorA = contact._fixtureA._isSensor;
+                        bool sensorB = contact._fixtureB._isSensor;
+                        if (sensorA || sensorB)
+                        {
+                            continue;
+                        }
+
+                        _island.Add(contact);
+        				contact._flags |= ContactFlags.Island;
 
 				        Body other = ce.Other;
 
@@ -849,344 +885,245 @@ namespace Box2D.XNA
 	        _contactManager.FindNewContacts();
         }
 
-	    void SolveTOI(ref TimeStep step)
+        // Advance a dynamic body to its first time of contact
+        // and adjust the position to ensure clearance.
+        void SolveTOI(Body body)
         {
-	        // Reserve an island and a queue for TOI island solution.
-	        _island.Reset(  _bodyCount,
-	                        Settings.b2_maxTOIContactsPerIsland,
-                            Settings.b2_maxTOIJointsPerIsland,
-	                        _contactManager.ContactListener);
+	        // Find the minimum contact.
+	        Contact toiContact = null;
+	        float toi = 1.0f;
+	        bool found;
+	        int count;
+	        int iter = 0;
 
-	        //Simple one pass queue
-	        //Relies on the fact that we're only making one pass
-	        //through and each body can only be pushed/popped once.
-	        //To push: 
-	        //  queue[queueStart+queueSize++] = newElement;
-	        //To pop: 
-	        //	poppedElement = queue[queueStart++];
-	        //  --queueSize;
-#warning More Body array Allocs
-            int queueCapacity = _bodyCount;
-            Body[] queue = new Body[_bodyCount];
+	        bool bullet = body.IsBullet;
 
-	        for (Body b = _bodyList; b != null; b = b._next)
+	        // Iterate until all contacts agree on the minimum TOI. We have
+	        // to iterate because the TOI algorithm may skip some intermediate
+	        // collisions when objects rotate through each other.
+	        do
 	        {
-		        b._flags &= ~BodyFlags.Island;
-		        b._sweep.t0 = 0.0f;
-	        }
-
-	        for (Contact c = _contactManager._contactList; c != null; c = c._next)
-	        {
-		        // Invalidate TOI
-		        c._flags &= ~(ContactFlags.Toi | ContactFlags.Island);
-	        }
-
-	        for (Joint j = _jointList; j != null; j = j._next)
-	        {
-		        j._islandFlag = false;
-	        }
-
-	        // Find TOI events and solve them.
-	        for (;;)
-	        {
-		        // Find the first TOI.
-		        Contact minContact = null;
-		        float minTOI = 1.0f;
-
-		        for (Contact c = _contactManager._contactList; c != null; c = c._next)
+		        count = 0;
+		        found = false;
+		        for (ContactEdge ce = body._contactList; ce != null; ce = ce.Next)
 		        {
-                    // Can this contact generate a solid TOI contact?
-                    if (c.IsSensor() || c.IsEnabled() == false || c.IsContinuous() == false)
+			        Body other = ce.Other;
+			        BodyType type = other.GetType();
+
+                    // Only perform correction with static bodies, so the
+                    // body won't get pushed out of the world.
+                    if (type != BodyType.Static)
 			        {
 				        continue;
 			        }
 
-			        // TODO_ERIN keep a counter on the contact, only respond to M TOIs per contact.
-
-			        float toi = 1.0f;
-			        if ((c._flags & ContactFlags.Toi) != ContactFlags.None)
+			        // Check for a disabled contact.
+			        Contact contact = ce.Contact;
+			        if (contact.IsEnabled() == false)
 			        {
-				        // This contact has a valid cached TOI.
-				        toi = c._toi;
-			        }
-			        else
-			        {
-				        // Compute the TOI for this contact.
-				        Fixture s1 = c.GetFixtureA();
-				        Fixture s2 = c.GetFixtureB();
-				        Body b1 = s1.GetBody();
-				        Body b2 = s2.GetBody();
-
-                        if ((b1.GetType() != BodyType.Dynamic || !b1.IsAwake()) && 
-                            (b2.GetType() != BodyType.Dynamic || !b2.IsAwake()))
-				        {
-					        continue;
-				        }
-
-				        // Put the sweeps onto the same time interval.
-				        float t0 = b1._sweep.t0;
-
-				        if (b1._sweep.t0 < b2._sweep.t0)
-				        {
-					        t0 = b2._sweep.t0;
-					        b1._sweep.Advance(t0);
-				        }
-				        else if (b2._sweep.t0 < b1._sweep.t0)
-				        {
-					        t0 = b1._sweep.t0;
-					        b2._sweep.Advance(t0);
-				        }
-
-				        Debug.Assert(t0 < 1.0f);
-
-				        // Compute the time of impact.
-				        toi = c.ComputeTOI(ref b1._sweep, ref b2._sweep);
-				    
-				        Debug.Assert(0.0f <= toi && toi <= 1.0f);
-
-				        // If the TOI is in range ...
-				        if (0.0f < toi && toi < 1.0f)
-				        {
-					        // Interpolate on the actual range.
-					        toi = Math.Min((1.0f - toi) * t0 + toi, 1.0f);
-				        }
-
-
-				        c._toi = toi;
-				        c._flags |= ContactFlags.Toi;
+				        continue;
 			        }
 
-			        if (Settings.b2_epsilon < toi && toi < minTOI)
+			        // Prevent infinite looping.
+			        if (contact._toiCount > 10)
 			        {
-				        // This is the minimum TOI found so far.
-				        minContact = c;
-				        minTOI = toi;
+				        continue;
 			        }
+
+			        Fixture fixtureA = contact._fixtureA;
+			        Fixture fixtureB = contact._fixtureB;
+
+			        // Cull sensors.
+			        if (fixtureA.IsSensor() || fixtureB.IsSensor())
+			        {
+				        continue;
+			        }
+
+			        Body bodyA = fixtureA._body;
+			        Body bodyB = fixtureB._body;
+
+			        // Compute the time of impact in interval [0, minTOI]
+			        TOIInput input = new TOIInput();
+			        input.proxyA.Set(fixtureA.GetShape());
+			        input.proxyB.Set(fixtureB.GetShape());
+			        input.sweepA = bodyA._sweep;
+			        input.sweepB = bodyB._sweep;
+			        input.tMax = toi;
+
+			        TOIOutput output;
+			        TimeOfImpact.CalculateTimeOfImpact(out output, ref input);
+
+			        if (output.State == TOIOutputState.Touching && output.t < toi)
+			        {
+				        toiContact = contact;
+				        toi = output.t;
+				        found = true;
+			        }
+
+			        ++count;
 		        }
 
-		        if (minContact == null || 1.0f - 100.0f * Settings.b2_epsilon < minTOI)
+		        ++iter;
+	        } while (found && count > 1 && iter < 50);
+
+	        if (toiContact == null)
+	        {
+		        return;
+	        }
+
+	        // Advance the body to its safe time.
+	        Sweep backup = body._sweep;
+	        body.Advance(toi);
+
+	        ++toiContact._toiCount;
+
+	        // Update all the valid contacts on this body and build a contact island.
+	        count = 0;
+	        for (ContactEdge ce = body._contactList; (ce != null) && (count < Settings.b2_maxTOIContactsPerIsland); ce = ce.Next)
+	        {
+		        Body other = ce.Other;
+		        BodyType type = other.GetType();
+
+		        // Only bullets perform TOI with dynamic bodies.
+		        if (bullet == true)
 		        {
-			        // No more TOI events. Done!
-			        break;
+			        // Bullets only perform TOI with bodies that have their TOI resolved.
+			        if ((other._flags & BodyFlags.Toi) == 0)
+			        {
+				        continue;
+			        }
 		        }
-
-		        // Advance the bodies to the TOI.
-		        Fixture s1_2 = minContact.GetFixtureA();
-                Fixture s2_2 = minContact.GetFixtureB();
-                Body b1_2 = s1_2.GetBody();
-                Body b2_2 = s2_2.GetBody();
-
-                Sweep backup1 = b1_2._sweep;
-                Sweep backup2 = b2_2._sweep;
-
-                b1_2.Advance(minTOI);
-                b2_2.Advance(minTOI);
-
-		        // The TOI contact likely has some new contact points.
-		        minContact.Update(_contactManager.ContactListener);
-		        minContact._flags &= ~ContactFlags.Toi;
-
-                // Is the contact solid?
-                if (minContact.IsSensor() || !minContact.IsEnabled())
-                {
-                    // Restore the sweeps.
-                    b1_2._sweep = backup1;
-                    b2_2._sweep = backup2;
-                    b1_2.SynchronizeTransform();
-                    b2_2.SynchronizeTransform();
-                    continue;
-                }
-
-                // Did numerical issues prevent a contact point from being generated?
-                if (!minContact.IsTouching())
-                {
-                    // Give up on this TOI.
+		        else if (type == BodyType.Dynamic)
+		        {
 			        continue;
 		        }
 
-		        // Build the TOI island. We need a dynamic seed.
-                Body seed = b1_2;
-                if (seed.GetType() != BodyType.Dynamic)
+		        // Check for a disabled contact.
+		        Contact contact = ce.Contact;
+		        if (contact.IsEnabled() == false)
 		        {
-                    seed = b2_2;
+			        continue;
 		        }
 
-		        // Reset island and queue.
-		        _island.Clear();
+		        Fixture fixtureA = contact._fixtureA;
+		        Fixture fixtureB = contact._fixtureB;
 
-		        int queueStart = 0; // starting index for queue
-		        int queueSize = 0;  // elements in queue
-		        queue[queueStart + queueSize++] = seed;
-		        seed._flags |= BodyFlags.Island;
-
-		        // Perform a breadth first search (BFS) on the contact/joint graph.
-		        while (queueSize > 0)
+		        // Cull sensors.
+		        if (fixtureA.IsSensor() || fixtureB.IsSensor())
 		        {
-			        // Grab the next body off the stack and add it to the island.
-			        Body b = queue[queueStart++];
-			        --queueSize;
-
-			        _island.Add(b);
-
-			        // Make sure the body is awake.
-                    if (b.IsAwake() == false)
-                    {
-                        b.SetAwake(true);
-                    }
-
-
-			        // To keep islands as small as possible, we don't
-                    // propagate islands across static or kinematic bodies.
-                    if (b.GetType() != BodyType.Dynamic)
-			        {
-				        continue;
-			        }
-
-			        // Search all contacts connected to this body.
-			        for (ContactEdge cEdge = b._contactList; cEdge != null; cEdge = cEdge.Next)
-			        {
-				        // Does the TOI island still have space for contacts?
-				        if (_island._contactCount == _island._contactCapacity)
-				        {
-					        break;
-				        }
-
-				       	// Has this contact already been added to an island?
-				        if ((cEdge.Contact._flags & ContactFlags.Island) != ContactFlags.None)
-				        {
-					        continue;
-				        }
-
-				      	// Skip separate, sensor, or disabled contacts.
-				        if (cEdge.Contact.IsSensor() == true ||
-					        cEdge.Contact.IsEnabled() == false ||
-					        cEdge.Contact.IsTouching() == false)
-				        {
-					        continue;
-				        }
-
-				        _island.Add(cEdge.Contact);
-				        cEdge.Contact._flags |= ContactFlags.Island;
-
-				        // Update other body.
-				        Body other = cEdge.Other;
-
-				        // Was the other body already added to this island?
-				        if ((other._flags & BodyFlags.Island) != BodyFlags.None)
-				        {
-					        continue;
-				        }
-
-                        // Synchronize the connected body.
-                        if (other.GetType() != BodyType.Static)
-				        {
-					        other.Advance(minTOI);
-					        other.SetAwake(true);
-				        }
-
-				        Debug.Assert(queueStart + queueSize < queueCapacity);
-				        queue[queueStart + queueSize] = other;
-				        ++queueSize;
-				        other._flags |= BodyFlags.Island;
-			        }
-
-			        for (JointEdge jEdge = b._jointList; jEdge != null; jEdge = jEdge.Next)
-			        {
-				        if (_island._jointCount == _island._jointCapacity)
-				        {
-					        continue;
-				        }
-
-				        if (jEdge.Joint._islandFlag == true)
-				        {
-					        continue;
-				        }
-
-				        Body other = jEdge.Other;
-                        if (other.IsActive() == false)
-                        {
-                            continue;
-                        }
-
-                        _island.Add(jEdge.Joint);
-
-                        jEdge.Joint._islandFlag = true;
-
-				        if ((other._flags & BodyFlags.Island) != BodyFlags.None)
-				        {
-					        continue;
-				        }
-
-                        // Synchronize the connected body.
-                        if (other.GetType() != BodyType.Static)
-				        {
-					        other.Advance(minTOI);
-					        other.SetAwake(true);
-				        }
-
-				        Debug.Assert(queueStart + queueSize < queueCapacity);
-				        queue[queueStart + queueSize] = other;
-				        ++queueSize;
-				        other._flags |= BodyFlags.Island;
-			        }
+			        continue;
 		        }
 
-		        TimeStep subStep;
-		        subStep.warmStarting = false;
-		        subStep.dt = (1.0f - minTOI) * step.dt;
-		        subStep.inv_dt = 1.0f / subStep.dt;
-		        subStep.dtRatio = 0.0f;
-		        subStep.velocityIterations = step.velocityIterations;
-		        subStep.positionIterations = step.positionIterations;
+		        // The contact likely has some new contact points. The listener
+		        // gives the user a chance to disable the contact;
+                contact.Update(_contactManager.ContactListener);
 
-		        _island.SolveTOI(ref subStep);
-
-		        // Post solve cleanup.
-		        for (int i = 0; i < _island._bodyCount; ++i)
+		        // Did the user disable the contact?
+		        if (contact.IsEnabled() == false)
 		        {
-			        // Allow bodies to participate in future TOI islands.
-			        Body b = _island._bodies[i];
-			        b._flags &= ~BodyFlags.Island;
-
-			        if (b.IsAwake() == false)
+			        if (contact == toiContact)
 			        {
-				        continue;
+				        // Restore the body's sweep.
+				        body._sweep = backup;
+				        body.SynchronizeTransform();
+
+				        // Recurse because the TOI has been invalidated.
+				        SolveTOI(body);
+				        return;
 			        }
 
-			        if (b.GetType() == BodyType.Static)
-			        {
-				        continue;
-			        }
-
-			        // Update fixtures (for broad-phase).
-			        b.SynchronizeFixtures();
-
-			        // Invalidate all contact TOIs associated with this body. Some of these
-			        // may not be in the island because they were not touching.
-			        for (ContactEdge ce = b._contactList; ce != null; ce = ce.Next)
-			        {
-				        ce.Contact._flags &= ~ContactFlags.Toi;
-			        }
+			        // Skip this contact.
+			        continue;
 		        }
 
-                int contactCount = _island._contactCount;
-                for (int i = 0; i < contactCount; ++i)
+		        if (contact.IsTouching() == false)
 		        {
-			        // Allow contacts to participate in future TOI islands.
-			        Contact c = _island._contacts[i];
-			        c._flags &= ~(ContactFlags.Toi | ContactFlags.Island);
+			        continue;
 		        }
 
-		        for (int i = 0; i < _island._jointCount; ++i)
+		        _toiContacts[count] = contact;
+		        ++count;
+	        }
+
+	        // Reduce the TOI body's overlap with the contact island.
+	        _toiSolver.Initialize(_toiContacts, count, body);
+
+	        const float k_toiBaumgarte = 0.75f;
+	        bool solved = false;
+	        for (int i = 0; i < 20; ++i)
+	        {
+		        bool contactsOkay = _toiSolver.Solve(k_toiBaumgarte);
+		        if (contactsOkay)
 		        {
-			        // Allow joints to participate in future TOI islands.
-			        Joint j = _island._joints[i];
-			        j._islandFlag = false;
+			        solved = true;
+			        break;
+		        }
+	        }
+        }
+
+        // Sequentially solve TOIs for each body. We bring each
+        // body to the time of contact and perform some position correction.
+        // Time is not conserved.
+        void SolveTOI()
+        {
+	        // Prepare all contacts.
+	        for (Contact c = _contactManager._contactList; c != null; c = c._next)
+	        {
+		        // Enable the contact
+		        c._flags |= ContactFlags.Enabled;
+
+		        // Set the number of TOI events for this contact to zero.
+		        c._toiCount = 0;
+	        }
+
+	        // Initialize the TOI flag.
+	        for (Body body = _bodyList; body != null; body = body._next)
+	        {
+		        // Sleeping, kinematic, and static bodies will not be affected by the TOI event.
+		        if (body.IsAwake() == false || body.GetType() == BodyType.Kinematic || body.GetType() == BodyType.Static)
+		        {
+			        body._flags |= BodyFlags.Toi;
+		        }
+		        else
+		        {
+			        body._flags &= ~BodyFlags.Toi;
+		        }
+	        }
+
+	        // Collide non-bullets.
+	        for (Body body = _bodyList; body != null; body = body._next)
+	        {
+		        if (body.GetType() != BodyType.Dynamic || body.IsAwake() == false)
+		        {
+			        continue;
 		        }
 
-		        // Commit fixture proxy movements to the broad-phase so that new contacts are created.
-		        // Also, some contacts can be destroyed.
-		        _contactManager.FindNewContacts();
+		        if (body.IsBullet == true)
+		        {
+			        continue;
+		        }
+
+		        SolveTOI(body);
+
+		        body._flags |= BodyFlags.Toi;
+	        }
+
+	        // Collide bullets.
+	        for (Body body = _bodyList; body != null; body = body._next)
+	        {
+		        if (body.GetType() != BodyType.Dynamic || body.IsAwake() == false)
+		        {
+			        continue;
+		        }
+
+		        if (body.IsBullet == false)
+		        {
+			        continue;
+		        }
+
+		        SolveTOI(body);
+
+		        body._flags |= BodyFlags.Toi;
 	        }
         }
 
@@ -1267,6 +1204,8 @@ namespace Box2D.XNA
 	        }
         }
 
+        TOISolver _toiSolver = new TOISolver();
+        Contact[] _toiContacts = new Contact[Settings.b2_maxTOIContactsPerIsland];
         internal Island _island = new Island();
         internal WorldFlags _flags;
 
