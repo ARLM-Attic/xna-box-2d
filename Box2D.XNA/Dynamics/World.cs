@@ -993,7 +993,7 @@ namespace Box2D.XNA
 
                 // Only perform correction with static bodies, so the
                 // body won't get pushed out of the world.
-		        if (type != BodyType.Dynamic)
+		        if (type != BodyType.Static)
 		        {
 			        continue;
 		        }
