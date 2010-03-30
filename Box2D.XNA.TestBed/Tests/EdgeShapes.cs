@@ -46,7 +46,7 @@ namespace Box2D.XNA.TestBed.Tests
 
 				    PolygonShape shape = new PolygonShape();
 				    shape.SetAsEdge(new Vector2(x1, y1), new Vector2(x2, y2));
-				    ground.CreateFixture(shape);
+				    ground.CreateFixture(shape, 0.0f);
 
 				    x1 = x2;
 				    y1 = y2;
@@ -206,7 +206,7 @@ namespace Box2D.XNA.TestBed.Tests
 
 		    if (_fixture != null)
 		    {
-                _debugDraw.DrawPoint(_point, 5.0f, new Color(0.4f, 0.9f, 0.4f));
+                _debugDraw.DrawPoint(_point, .5f, new Color(0.4f, 0.9f, 0.4f));
 
                 _debugDraw.DrawSegment(point1, _point, new Color(0.8f, 0.8f, 0.8f));
 

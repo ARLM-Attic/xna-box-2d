@@ -193,80 +193,19 @@ namespace Box2D.XNA
 	    public ContactID id;
     };
 
-    /// Ray-cast input data.
+    /// Ray-cast input data. The ray extends from p1 to p1 + maxFraction * (p2 - p1).
     public struct RayCastInput
     {
 	    public Vector2 p1, p2;
 	    public float maxFraction;
     };
 
-    /// Ray-cast output data.
+    /// Ray-cast output data.  The ray hits at p1 + fraction * (p2 - p1), where p1 and p2
+    /// come from RayCastInput. 
     public struct RayCastOutput
     {
 	    public Vector2 normal;
         public float fraction;
-    };
-
-    /// A line segment.
-    public struct Segment
-    {
-	    /// Ray cast against this segment with another segment.
-        // Collision Detection in Interactive 3D Environments by Gino van den Bergen
-        // From Section 3.4.1
-        // x = mu1 * p1 + mu2 * p2
-        // mu1 + mu2 = 1 && mu1 >= 0 && mu2 >= 0
-        // mu1 = 1 - mu2;
-        // x = (1 - mu2) * p1 + mu2 * p2
-        //   = p1 + mu2 * (p2 - p1)
-        // x = s + a * r (s := start, r := end - start)
-        // s + a * r = p1 + mu2 * d (d := p2 - p1)
-        // -a * r + mu2 * d = b (b := s - p1)
-        // [-r d] * [a; mu2] = b
-        // Cramer's rule:
-        // denom = det[-r d]
-        // a = det[b d] / denom
-        // mu2 = det[-r b] / denom
-	    public bool TestSegment(out float lambda, out Vector2 normal, ref Segment segment, float maxLambda)
-        {
-            lambda = 0;
-            normal = Vector2.Zero;
-
-	        Vector2 s = segment.p1;
-	        Vector2 r = segment.p2 - s;
-	        Vector2 d = p2 - p1;
-	        Vector2 n = MathUtils.Cross(d, 1.0f);
-
-	        const float k_slop = 100.0f * Settings.b2_epsilon;
-	        float denom = -Vector2.Dot(r, n);
-
-	        // Cull back facing collision and ignore parallel segments.
-	        if (denom > k_slop)
-	        {
-		        // Does the segment intersect the infinite line associated with this segment?
-		        Vector2 b = s - p1;
-		        float a = Vector2.Dot(b, n);
-
-		        if (0.0f <= a && a <= maxLambda * denom)
-		        {
-			        float mu2 = -r.X * b.Y + r.Y * b.X;
-
-			        // Does the segment intersect this segment?
-			        if (-k_slop * denom <= mu2 && mu2 <= denom * (1.0f + k_slop))
-			        {
-				        a /= denom;
-				        n.Normalize();
-				        lambda = a;
-				        normal = n;
-				        return true;
-			        }
-		        }
-	        }
-
-	        return false;
-        }
-
-	    public Vector2 p1;	///< the starting point
-	    public Vector2 p2;	///< the ending point
     };
 
     /// An axis aligned bounding box.

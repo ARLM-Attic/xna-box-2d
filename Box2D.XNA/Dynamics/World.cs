@@ -589,7 +589,7 @@ namespace Box2D.XNA
 	    /// @param callback a user implemented callback class.
 	    /// @param point1 the ray starting point
 	    /// @param point2 the ray ending point
-        public void RayCast(Func<Fixture, Vector2, Vector2, float, float> callback, Vector2 point1, Vector2 point2)
+        public void RayCast(RayCastCallback callback, Vector2 point1, Vector2 point2)
         {
             RayCastInput input = new RayCastInput();
             input.maxFraction = 1.0f;
@@ -601,8 +601,8 @@ namespace Box2D.XNA
             _rayCastCallback = null;
         }
 
-        Func<Fixture, Vector2, Vector2, float, float> _rayCastCallback;
-        RayCastCallback _rayCastCallbackWrapper;
+        RayCastCallback _rayCastCallback;
+        RayCastCallbackInternal _rayCastCallbackWrapper;
 
         float RayCastCallbackWrapper(ref RayCastInput input, int proxyId)
 	    {
@@ -986,7 +986,7 @@ namespace Box2D.XNA
 
 	        // Update all the valid contacts on this body and build a contact island.
 	        count = 0;
-	        for (ContactEdge ce = body._contactList; (ce != null) && (count < Settings.b2_maxTOIContactsPerIsland); ce = ce.Next)
+	        for (ContactEdge ce = body._contactList; (ce != null) && (count < Settings.b2_maxTOIContacts); ce = ce.Next)
 	        {
 		        Body other = ce.Other;
 		        BodyType type = other.GetType();
@@ -1205,7 +1205,7 @@ namespace Box2D.XNA
         }
 
         TOISolver _toiSolver = new TOISolver();
-        Contact[] _toiContacts = new Contact[Settings.b2_maxTOIContactsPerIsland];
+        Contact[] _toiContacts = new Contact[Settings.b2_maxTOIContacts];
         internal Island _island = new Island();
         internal WorldFlags _flags;
 

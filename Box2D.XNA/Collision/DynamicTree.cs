@@ -28,8 +28,7 @@ namespace Box2D.XNA
 {
     /// A dynamic AABB tree broad-phase, inspired by Nathanael Presson's btDbvt.
 
-
-    public delegate float RayCastCallback(ref RayCastInput input, int userData);
+    internal delegate float RayCastCallbackInternal(ref RayCastInput input, int userData);
 
     /// A node in the dynamic tree. The client does not interact with this directly.
     internal struct DynamicTreeNode
@@ -268,7 +267,7 @@ namespace Box2D.XNA
 	    /// number of proxies in the tree.
 	    /// @param input the ray-cast input data. The ray extends from p1 to p1 + maxFraction * (p2 - p1).
 	    /// @param callback a callback class that is called for each proxy that is hit by the ray.
-	    public void RayCast(RayCastCallback callback, ref RayCastInput input) 
+	    internal void RayCast(RayCastCallbackInternal callback, ref RayCastInput input) 
         {
 	        Vector2 p1 = input.p1;
 	        Vector2 p2 = input.p2;
@@ -328,16 +327,19 @@ namespace Box2D.XNA
 			        subInput.p2 = input.p2;
 			        subInput.maxFraction = maxFraction;
 
-		        	maxFraction = callback(ref subInput, nodeId);
+		        	float value = callback(ref subInput, nodeId);
 
-		            if (maxFraction == 0.0f)
+		            if (value == 0.0f)
                     {
+                        // the client has terminated the raycast.
 				        return;
 			        }
 
-			        // Update segment bounding box.
+			        if (value > 0.0f)
 			        {
-				        Vector2 t = p1 + maxFraction * (p2 - p1);
+                        // Update segment bounding box.
+                        maxFraction = value; 
+                        Vector2 t = p1 + maxFraction * (p2 - p1);
 				        segmentAABB.lowerBound = Vector2.Min(p1, t);
                         segmentAABB.upperBound = Vector2.Max(p1, t);
 			        }

@@ -87,10 +87,10 @@ namespace Box2D.XNA
 	    public float motorSpeed;
     };
 
-    /// A line joint. This joint provides one degree of freedom: translation
-    /// along an axis fixed in body1. You can use a joint limit to restrict
-    /// the range of motion and a joint motor to drive the motion or to
-    /// model joint friction.
+    /// A line joint. This joint provides two degrees of freedom: translation
+    /// along an axis fixed in body1 and rotation in the plane. You can use a
+    /// joint limit to restrict the range of motion and a joint motor to drive
+    /// the motion or to model joint friction.
     public class LineJoint : Joint
     {
 	    public override Vector2 GetAnchorA()

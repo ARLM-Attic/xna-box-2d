@@ -287,7 +287,14 @@ namespace Box2D.XNA
                 }
 
                 output.fraction = t;
-                output.normal = normal;
+                if (numerator > 0.0f)
+                {
+                    output.normal = -normal;
+                }
+                else
+                {
+                    output.normal = normal;
+                }
                 return true;
             }
             else
@@ -404,7 +411,7 @@ namespace Box2D.XNA
             {
                 massData.center = 0.5f * (_vertices[0] + _vertices[1]);
                 massData.mass = 0.0f;
-                massData.i = 0.0f;
+                massData.I = 0.0f;
                 return;
             }
 
@@ -455,7 +462,7 @@ namespace Box2D.XNA
 	        massData.center = center;
 
 	        // Inertia tensor relative to the local origin.
-	        massData.i = density * I;
+	        massData.I = density * I;
         }
 
 	    /// Get the supporting vertex index in the given direction.

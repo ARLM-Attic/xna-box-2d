@@ -197,7 +197,7 @@ namespace Box2D.XNA
 	        _tree.Query(callback, ref aabb);
         }
 
-        public void RayCast(RayCastCallback callback, ref RayCastInput input)
+        internal void RayCast(RayCastCallbackInternal callback, ref RayCastInput input)
         {
 	        _tree.RayCast(callback, ref input);
         }

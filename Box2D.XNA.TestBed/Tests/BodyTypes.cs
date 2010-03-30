@@ -23,6 +23,7 @@
 using Box2D.XNA.TestBed.Framework;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using System;
 
 namespace Box2D.XNA.TestBed.Tests
 {
@@ -60,11 +61,11 @@ namespace Box2D.XNA.TestBed.Tests
             {
                 BodyDef bd = new BodyDef();
                 bd.type = BodyType.Dynamic;
-                bd.position = new Vector2(0.0f, 5.0f);
+                bd.position = new Vector2(-4.0f, 5.0f);
                 _platform = _world.CreateBody(bd);
 
                 PolygonShape shape = new PolygonShape();
-                shape.SetAsBox(4.0f, 0.5f);
+                shape.SetAsBox(0.5f, 4.0f, new Vector2(4.0f, 0.0f), 0.5f * (float)Math.PI);
 
                 FixtureDef fd = new FixtureDef();
                 fd.shape = shape;

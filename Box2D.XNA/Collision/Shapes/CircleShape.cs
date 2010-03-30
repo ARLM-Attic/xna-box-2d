@@ -110,7 +110,7 @@ namespace Box2D.XNA
 	        massData.center = _p;
 
 	        // inertia about the local origin
-	        massData.i = massData.mass * (0.5f * _radius * _radius + Vector2.Dot(_p, _p));
+	        massData.I = massData.mass * (0.5f * _radius * _radius + Vector2.Dot(_p, _p));
         }
 
         /// Get the supporting vertex index in the given direction.

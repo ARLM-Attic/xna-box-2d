@@ -61,8 +61,8 @@ namespace Box2D.XNA
 
         // Dynamics
 
-        /// Maximum number of contacts to be handled to solve a TOI island.
-        public const int b2_maxTOIContactsPerIsland = 32;
+        /// Maximum number of contacts to be handled to solve a TOI impact.
+        public const int b2_maxTOIContacts = 32;
 
         /// A velocity threshold for elastic collisions. Any collision with a relative linear
         /// velocity below this threshold will be treated as inelastic.

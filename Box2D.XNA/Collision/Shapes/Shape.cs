@@ -33,9 +33,8 @@ namespace Box2D.XNA
         /// The position of the shape's centroid relative to the shape's origin.
         public Vector2 center;
 
-        /// The rotational inertia of the shape. This may be about the center or local
-        /// origin, depending on usage.
-        public float i;
+        /// The rotational inertia of the shape about the local origin.
+        public float I;
     };
 
     public enum ShapeType

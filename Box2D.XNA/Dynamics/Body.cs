@@ -226,8 +226,6 @@ namespace Box2D.XNA
             return CreateFixture(def);
         }
 
-        public Fixture CreateFixture(Shape shape) { return CreateFixture(shape, 1.0f); }
-
 	    /// Destroy a fixture. This removes the fixture from the broad-phase and
 	    /// destroys all contacts associated with this fixture. This will	
         /// automatically adjust the mass of the body if the body is dynamic and the
@@ -453,17 +451,35 @@ namespace Box2D.XNA
 	    /// is not at the center of mass. This wakes up the body.
 	    /// @param impulse the world impulse vector, usually in N-seconds or kg-m/s.
 	    /// @param point the world position of the point of application.
-	    public void ApplyImpulse(Vector2 impulse, Vector2 point)
+	    public void ApplyLinearImpulse(Vector2 impulse, Vector2 point)
         {
-            if (_type == BodyType.Dynamic)
+            if (_type != BodyType.Dynamic)
             {
-                if (IsAwake() == false)
-                {
-                    SetAwake(true);
-                }
-                _linearVelocity += _invMass * impulse;
-                _angularVelocity += _invI * MathUtils.Cross(point - _sweep.c, impulse);
+                return;
             }
+            if (IsAwake() == false)
+            {
+                SetAwake(true);
+            }
+            _linearVelocity += _invMass * impulse;
+            _angularVelocity += _invI * MathUtils.Cross(point - _sweep.c, impulse);
+        }
+
+        /// Apply an angular impulse.  
+        /// @param impulse the angular impulse in units of kg*m*m/s  
+        public void ApplyAngularImpulse(float impulse)
+        {
+            if (_type != BodyType.Dynamic)
+            {
+                return;
+            }
+
+            if (IsAwake() == false)
+            {
+                SetAwake(true);
+            }
+
+            _angularVelocity += m_invI * impulse;
         }
 
 	    /// Get the total mass of the body.
@@ -473,21 +489,20 @@ namespace Box2D.XNA
             return _mass;
         }
 
-	    /// Get the central rotational inertia of the body.
+        /// Get the rotational inertia of the body about the local origin.
 	    /// @return the rotational inertia, usually in kg-m^2.
 	    public float GetInertia()
         {
-            return _I;
+            return _I + _mass * Vector2.Dot(_sweep.localCenter, _sweep.localCenter);
         }
 
-        /// Get the mass data of the body. The rotational inertia is relative
-        /// to the center of mass.
+        /// Get the mass data of the body.
 	    /// @return a struct containing the mass, inertia and center of the body.
 	    public void GetMassData(out MassData massData)
         {
             massData = new MassData();
             massData.mass = _mass;
-            massData.i = _I;
+            massData.I = _I + _mass * Vector2.Dot(_sweep.localCenter, _sweep.localCenter);
             massData.center = _sweep.localCenter;
         }
 
@@ -495,7 +510,6 @@ namespace Box2D.XNA
  	    /// Note that this changes the center of mass position.
         /// Note that creating or destroying fixtures can also alter the mass.
         /// This function has no effect if the body isn't dynamic.
-        /// @warning The supplied rotational inertia is assumed to be relative to the center of mass.
         /// @param massData the mass properties.
         public void SetMassData(ref MassData massData)
         {
@@ -524,9 +538,10 @@ namespace Box2D.XNA
             _invMass = 1.0f / _mass;
 
 
-	        if (massData.i > 0.0f && (_flags & BodyFlags.FixedRotation) == 0)
+	        if (massData.I > 0.0f && (_flags & BodyFlags.FixedRotation) == 0)
 	        {
-		        _I = massData.i - _mass * Vector2.Dot(massData.center, massData.center);
+		        _I = massData.I - _mass * Vector2.Dot(massData.center, massData.center);
+                Debug.Assert(m_I > 0.0f);
 		        _invI = 1.0f / _I;
 	        }
 
@@ -554,6 +569,7 @@ namespace Box2D.XNA
             // Static and kinematic bodies have zero mass.
             if (_type == BodyType.Static || _type == BodyType.Kinematic)
             {
+                _sweep.c0 = _sweep.c = _xf.position;
                 return;
             }
 
@@ -572,7 +588,7 @@ namespace Box2D.XNA
                 f.GetMassData(out massData);
 		        _mass += massData.mass;
 		        center += massData.mass * massData.center;
-		        _I += massData.i;
+		        _I += massData.I;
 	        }
 
 	        // Compute center of mass.
@@ -592,7 +608,6 @@ namespace Box2D.XNA
 	        {
 		        // Center the inertia about the center of mass.
 		        _I -= _mass * Vector2.Dot(center, center);
-                _I *= _intertiaScale;
 
 		        Debug.Assert(_I > 0.0f);
 		        _invI = 1.0f / _I;
@@ -956,7 +971,6 @@ namespace Box2D.XNA
                 _invMass = 1.0f;
             }
 
-            _intertiaScale = bd.inertiaScale;
 	        _userData = bd.userData;
         }
 
@@ -1070,6 +1084,8 @@ namespace Box2D.XNA
         internal ContactEdge _contactList;
 
         internal float _mass, _invMass;
+
+        // Rotational inertia about the center of mass.
         internal float _I, _invI;
 
         internal float _linearDamping;
