@@ -479,7 +479,7 @@ namespace Box2D.XNA
                 SetAwake(true);
             }
 
-            _angularVelocity += m_invI * impulse;
+            _angularVelocity += _invI * impulse;
         }
 
 	    /// Get the total mass of the body.
@@ -541,7 +541,7 @@ namespace Box2D.XNA
 	        if (massData.I > 0.0f && (_flags & BodyFlags.FixedRotation) == 0)
 	        {
 		        _I = massData.I - _mass * Vector2.Dot(massData.center, massData.center);
-                Debug.Assert(m_I > 0.0f);
+                Debug.Assert(_I > 0.0f);
 		        _invI = 1.0f / _I;
 	        }
 
@@ -569,7 +569,7 @@ namespace Box2D.XNA
             // Static and kinematic bodies have zero mass.
             if (_type == BodyType.Static || _type == BodyType.Kinematic)
             {
-                _sweep.c0 = _sweep.c = _xf.position;
+                _sweep.c0 = _sweep.c = _xf.Position;
                 return;
             }
 
