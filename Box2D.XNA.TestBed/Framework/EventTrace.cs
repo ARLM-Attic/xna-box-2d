@@ -59,6 +59,7 @@ namespace Box2D.XNA.TestBed.Framework
 
         public void BeginTrace(int eventID)
         {
+#if EVENTTRACING
             if (_stopwatch.IsRunning)
             {
                 Event e = _registeredEvents[eventID];
@@ -68,10 +69,12 @@ namespace Box2D.XNA.TestBed.Framework
                     e.LastTraceWasStart = true;    
                 }
             }
+#endif
         }
 
         public void EndTrace(int eventID)
         {
+#if EVENTTRACING
             if (_stopwatch.IsRunning)
             {
                 Event e = _registeredEvents[eventID];
@@ -81,10 +84,12 @@ namespace Box2D.XNA.TestBed.Framework
                     e.LastTraceWasStart = false;   
                 }
             }   
+#endif
         }
 
         public void ResetFrame()
         {
+#if EVENTTRACING
             if (_stopwatch.IsRunning)
             {
                 EnsureContent();
@@ -131,6 +136,7 @@ namespace Box2D.XNA.TestBed.Framework
             }
             _stopwatch.Reset();
             _stopwatch.Start();
+#endif
         }
 
         private void EnsureContent()

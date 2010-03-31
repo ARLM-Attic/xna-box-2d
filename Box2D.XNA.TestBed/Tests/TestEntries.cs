@@ -28,6 +28,7 @@ namespace Box2D.XNA.TestBed.Tests
     {
         public static TestEntry[] g_testEntries =
         {
+            new TestEntry() { name="Dominos", createFcn=Dominos.Create},
             new TestEntry() { name="Edge Shapes", createFcn=EdgeShapes.Create},
             new TestEntry() { name="Continuous Test", createFcn=ContinuousTest.Create},
             new TestEntry() { name="Time of Impact", createFcn=TimeOfImpact.Create},
@@ -44,7 +45,6 @@ namespace Box2D.XNA.TestBed.Tests
 	        new TestEntry() { name="Collision Processing", createFcn=CollisionProcessing.Create},
 	        new TestEntry() { name="Compound Shapes", createFcn=CompoundShapes.Create},
 	        new TestEntry() { name="Distance Test", createFcn=DistanceTest.Create},
-	        new TestEntry() { name="Dominos", createFcn=Dominos.Create},
 	        new TestEntry() { name="Dynamic Tree", createFcn=DynamicTreeTest.Create},
 	        new TestEntry() { name="Gears", createFcn=Gears.Create},
 	        new TestEntry() { name="Line Joint", createFcn=LineJoint.Create},

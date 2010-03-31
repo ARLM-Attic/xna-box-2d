@@ -28,7 +28,6 @@ namespace Box2D.XNA.TestBed.Framework
     {
         public static void Register(IEventTrace et)
         {
-
             FrameEventId = et.Register("Frame", Color.Orange);
             UpdateEventId = et.Register("Update", Color.Blue);
             PhysicsEventId = et.Register("Physics", Color.Cyan);

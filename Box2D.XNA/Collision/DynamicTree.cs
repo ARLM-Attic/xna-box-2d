@@ -445,7 +445,7 @@ namespace Box2D.XNA
             int node1 = _nodes[sibling].parentOrNext;
 	        int node2 = AllocateNode();
             _nodes[node2].parentOrNext = node1;
-	        _nodes[node2].userData = 0;
+            _nodes[node2].userData = null;
 	        _nodes[node2].aabb.Combine(ref _nodes[leaf].aabb, ref _nodes[sibling].aabb);
 
 	        if (node1 != NullNode)

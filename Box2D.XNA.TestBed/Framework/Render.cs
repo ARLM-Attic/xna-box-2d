@@ -174,6 +174,11 @@ namespace Box2D.XNA.TestBed.Framework
             DrawSolidPolygon(ref verts, 4, color, true);
         }
 
+        public void DrawString(int x, int y, string s)
+        {
+            _stringData.Add(new StringData(x, y, s, null));
+        }
+
         public void DrawString(int x, int y, string s, params object[] args)
         {
             _stringData.Add(new StringData(x, y, s, args));
@@ -197,7 +202,8 @@ namespace Box2D.XNA.TestBed.Framework
         {
             for (int i = 0; i < _stringData.Count; i++)
             {
-                _batch.DrawString(_font, string.Format(_stringData[i].s, _stringData[i].args), new Vector2(_stringData[i].x, _stringData[i].y), new Color(0.9f, 0.6f, 0.6f));
+                var text = _stringData[i].args == null ? _stringData[i].s : string.Format(_stringData[i].s, _stringData[i].args);
+                _batch.DrawString(_font, text, new Vector2(_stringData[i].x, _stringData[i].y), new Color(0.9f, 0.6f, 0.6f));
             }
 
             _stringData.Clear();
