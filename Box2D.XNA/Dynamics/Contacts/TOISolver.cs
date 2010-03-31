@@ -111,8 +111,8 @@ namespace Box2D.XNA
         {
             _count = count;
             _toiBody = toiBody;
-#warning "remove alloc"
-            _constraints = new TOIConstraint[_count];
+            if (_constraints.Length < _count)
+                _constraints = new TOIConstraint[Math.Max(_constraints.Length * 2, _count)];
 
             for (int i = 0; i < _count; ++i)
             {
@@ -221,7 +221,7 @@ namespace Box2D.XNA
             return minSeparation >= -1.5f * Settings.b2_linearSlop;
         }
 
-	    TOIConstraint[] _constraints;
+	    TOIConstraint[] _constraints = new TOIConstraint[8];
 	    int _count;
 	    Body _toiBody;
     }

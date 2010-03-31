@@ -733,10 +733,10 @@ namespace Box2D.XNA
 	        }
 
 	        // Build and simulate all awake islands.
-#warning Remove extra allocs
-
             int stackSize = _bodyCount;
-	        Body[] stack = new Body[_bodyCount];
+	        if (stackSize > stack.Length)
+                stack = new Body[Math.Max(stack.Length * 2, stackSize)];
+
 	        for (Body seed = _bodyList; seed != null; seed = seed._next)
 	        {
 		        if ((seed._flags & (BodyFlags.Island)) != BodyFlags.None)
@@ -1049,13 +1049,13 @@ namespace Box2D.XNA
 	        _toiSolver.Initialize(_toiContacts, count, body);
 
 	        const float k_toiBaumgarte = 0.75f;
-	        bool solved = false;
+	        //bool solved = false;
 	        for (int i = 0; i < 20; ++i)
 	        {
 		        bool contactsOkay = _toiSolver.Solve(k_toiBaumgarte);
 		        if (contactsOkay)
 		        {
-			        solved = true;
+			        //solved = true;
 			        break;
 		        }
 	        }
@@ -1224,5 +1224,7 @@ namespace Box2D.XNA
 	    // This is used to compute the time step ratio to
 	    // support a variable time step.
         internal float _inv_dt0;
+
+        Body[] stack = new Body[64];
     }
 }

@@ -161,7 +161,7 @@ namespace Box2D.XNA
         }
 
 	    /// Get the type of this body.
-        public BodyType GetType()
+        public new BodyType GetType()
         {
             return _type;
         }

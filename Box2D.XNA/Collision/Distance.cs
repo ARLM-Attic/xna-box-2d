@@ -627,7 +627,7 @@ namespace Box2D.XNA
                 SimplexVertex vertex = simplex._v[simplex._count];
                 vertex.indexA = input.proxyA.GetSupport(MathUtils.MultiplyT(ref input.transformA.R, -d));
                 vertex.wA = MathUtils.Multiply(ref input.transformA, input.proxyA.GetVertex(vertex.indexA));
-		        Vector2 wBLocal;
+
                 vertex.indexB = input.proxyB.GetSupport(MathUtils.MultiplyT(ref input.transformB.R, d));
                 vertex.wB = MathUtils.Multiply(ref input.transformB, input.proxyB.GetVertex(vertex.indexB));
 		        vertex.w = vertex.wB - vertex.wA;
