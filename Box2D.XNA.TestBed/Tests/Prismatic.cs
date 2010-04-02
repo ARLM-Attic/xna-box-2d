@@ -54,7 +54,9 @@ namespace Box2D.XNA.TestBed.Tests
                 PrismaticJointDef pjd = new PrismaticJointDef();
 
 			    // Bouncy limit
-			    pjd.Initialize(ground, body, new Vector2(0.0f, 0.0f), new Vector2(1.0f, 0.0f));
+                Vector2 axis = new Vector2(2, 1);
+			    axis.Normalize();
+			    pjd.Initialize(ground, body, new Vector2(0.0f, 0.0f), axis);
 
 			    // Non-bouncy limit
 			    //pjd.Initialize(ground, body, new Vector2(-10.0f, 10.0f), new Vector2(1.0f, 0.0f));

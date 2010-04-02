@@ -22,6 +22,7 @@
 
 using Box2D.XNA.TestBed.Framework;
 using Microsoft.Xna.Framework;
+using System;
 
 namespace Box2D.XNA.TestBed.Tests
 {
@@ -56,10 +57,7 @@ namespace Box2D.XNA.TestBed.Tests
 			_body = _world.CreateBody(bd);
 			_body.CreateFixture(shape, 1.0f);
 
-			_angularVelocity = Rand.RandomFloat(-50.0f, 50.0f);
-			_angularVelocity = 33.468121f;
-			_body.SetLinearVelocity(new Vector2(0.0f, -100.0f));
-			_body.SetAngularVelocity(_angularVelocity);
+            Launch();
 		}
 #else
 		{
@@ -85,7 +83,7 @@ namespace Box2D.XNA.TestBed.Tests
 	    void Launch()
 	    {
 		    _body.SetTransform(new Vector2(0.0f, 20.0f), 0.0f);
-		    _angularVelocity = Rand.RandomFloat(-50.0f, 50.0f);
+            _angularVelocity = Rand.RandomFloat(-50.0f, 50.0f);
 		    _body.SetLinearVelocity(new Vector2(0.0f, -100.0f));
 		    _body.SetAngularVelocity(_angularVelocity);
 	    }

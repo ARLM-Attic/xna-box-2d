@@ -199,6 +199,8 @@ namespace Box2D.XNA
 		        bodyB._contactList = c._nodeB.Next;
 	        }
 
+            c.Destroy();
+
 	        --_contactCount;
         }
 

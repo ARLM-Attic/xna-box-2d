@@ -22,6 +22,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace Box2D.XNA
 {
@@ -59,7 +60,7 @@ namespace Box2D.XNA
     /// The class manages contact between two shapes. A contact exists for each overlapping
     /// AABB in the broad-phase (except if filtered). Therefore a contact object may exist
     /// that has no contact points.
-    public abstract class Contact
+    public class Contact
     {
         /// Get the contact manifold. Do not modify the manifold unless you understand the
         /// internals of Box2D.
@@ -134,13 +135,12 @@ namespace Box2D.XNA
             _flags |= ContactFlags.Filter;
         }
 
-	    internal Contact()
+        internal Contact(Fixture fA, Fixture fB)
         {
-            _fixtureA = null;
-            _fixtureB = null;
+            Reset(fA, fB);
         }
 
-        internal Contact(Fixture fA, Fixture fB)
+        internal void Reset(Fixture fA, Fixture fB)
         {
             _flags = ContactFlags.Enabled;
 
@@ -257,17 +257,37 @@ namespace Box2D.XNA
         }
 
         /// Evaluate this contact with your own manifold and transforms.   
-        internal abstract void Evaluate(ref Manifold manifold, ref Transform xfA, ref Transform xfB); 
+        internal void Evaluate(ref Manifold manifold, ref Transform xfA, ref Transform xfB)
+        {
+            switch (_type)
+            {
+                case ContactType.Polygon:
+                    Collision.CollidePolygons(ref manifold,
+                        (PolygonShape)_fixtureA.GetShape(), ref xfA,
+                        (PolygonShape)_fixtureB.GetShape(), ref xfB);
+                    break;
+                case ContactType.PolygonAndCircle:
+                    Collision.CollidePolygonAndCircle(ref manifold,
+                            (PolygonShape)_fixtureA.GetShape(), ref xfA,
+                            (CircleShape)_fixtureB.GetShape(), ref xfB);
+                    break;
+                case ContactType.Circle:
+                    Collision.CollideCircles(ref manifold,
+                            (CircleShape)_fixtureA.GetShape(), ref xfA,
+                            (CircleShape)_fixtureB.GetShape(), ref xfB);
+                    break;
+            }
+        }
 
-	    internal static Func<Fixture, Fixture, Contact>[,]  s_registers = new Func<Fixture, Fixture, Contact>[,] 
+        internal static ContactType[,] s_registers = new ContactType[,] 
         {
             { 
-              (f1, f2) => { return new CircleContact(f1, f2); }, 
-              (f1, f2) => { return new PolygonAndCircleContact(f1, f2); }
+              ContactType.Circle,
+              ContactType.PolygonAndCircle
             },
             { 
-              (f1, f2) => { return new PolygonAndCircleContact(f1, f2); }, 
-              (f1, f2) => { return new PolygonContact(f1, f2); }
+              ContactType.PolygonAndCircle, 
+              ContactType.Polygon
             },
         };
 
@@ -278,18 +298,52 @@ namespace Box2D.XNA
 
 	        Debug.Assert(ShapeType.Unknown < type1 && type1 < ShapeType.TypeCount);
             Debug.Assert(ShapeType.Unknown < type2 && type2 < ShapeType.TypeCount);
-        	
-	        if (type1 > type2)
-	        {
-                // primary
-                return s_registers[(int)type1, (int)type2](fixtureA, fixtureB);
-	        }
-	        else
-	        {
-                return s_registers[(int)type1, (int)type2](fixtureB, fixtureA);
-	        }
+
+            Contact c;
+            var pool = fixtureA._body._world._contactPool;
+            if (pool.Count > 0)
+            {
+                c = pool.Dequeue();
+                if (type1 >= type2)
+                {
+                    c.Reset(fixtureA, fixtureB);
+                }
+                else
+                {
+                    c.Reset(fixtureB, fixtureA);
+                }
+            }
+            else
+            {
+                if (type1 >= type2)
+                {
+                    c = new Contact(fixtureA, fixtureB);
+                }
+                else
+                {
+                    c = new Contact(fixtureB, fixtureA);
+                }
+            }
+
+            c._type = Contact.s_registers[(int)type1, (int)type2];
+
+            return c;
         }
 
+        internal void Destroy()
+        {
+            _fixtureA._body._world._contactPool.Enqueue(this);
+            Reset(null, null);
+        }
+
+        internal enum ContactType
+        {
+            Polygon,
+            PolygonAndCircle,
+            Circle,
+        }
+
+        private ContactType _type;
 	    internal ContactFlags _flags;
 
 	    // World pool and list pointers.

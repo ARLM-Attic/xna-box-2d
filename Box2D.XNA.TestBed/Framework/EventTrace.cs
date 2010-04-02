@@ -20,11 +20,14 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
+//#define EVENTTRACING
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+
 
 namespace Box2D.XNA.TestBed.Framework
 {

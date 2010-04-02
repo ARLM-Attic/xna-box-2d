@@ -24,6 +24,7 @@ using System;
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System.Collections.Generic;
 
 namespace Box2D.XNA
 {
@@ -1210,6 +1211,7 @@ namespace Box2D.XNA
         internal WorldFlags _flags;
 
 	    internal ContactManager _contactManager = new ContactManager();
+        internal Queue<Contact> _contactPool = new Queue<Contact>(256);
 
         internal Body _bodyList;
         internal Joint _jointList;

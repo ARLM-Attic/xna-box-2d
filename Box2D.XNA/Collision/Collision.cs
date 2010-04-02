@@ -643,8 +643,8 @@ namespace Box2D.XNA
 	        float frontOffset = Vector2.Dot(normal, v11);
 
             // Side offsets, extended by polytope skin thickness.
-            float sideOffset1 = -Vector2.Dot(tangent, v11);
-            float sideOffset2 = Vector2.Dot(tangent, v12);
+            float sideOffset1 = -Vector2.Dot(tangent, v11) + totalRadius;
+            float sideOffset2 = Vector2.Dot(tangent, v12) + totalRadius;
 
 	        // Clip incident edge against extruded edge1 side edges.
 	        FixedArray2<ClipVertex> clipPoints1;

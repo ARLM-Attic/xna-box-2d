@@ -56,11 +56,8 @@
     <Compile Include="Common\Settings.cs" />
     <Compile Include="Dynamics\Body.cs" />
     <Compile Include="Dynamics\ContactManager.cs" />
-    <Compile Include="Dynamics\Contacts\CirlceContact.cs" />
     <Compile Include="Dynamics\Contacts\Contact.cs" />
     <Compile Include="Dynamics\Contacts\ContactSolver.cs" />
-    <Compile Include="Dynamics\Contacts\PolygonContact.cs" />
-    <Compile Include="Dynamics\Contacts\PolygonAndCircleContact.cs" />
     <Compile Include="Dynamics\Contacts\TOISolver.cs" />
     <Compile Include="Dynamics\Joints\FrictionJoint.cs" />
     <Compile Include="Dynamics\Joints\MaxDistanceJoint.cs" />
