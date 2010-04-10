@@ -78,13 +78,13 @@ namespace Box2D.XNA
 
         /// The maximum linear velocity of a body. This limit is very large and is used
         /// to prevent numerical problems. You shouldn't need to adjust this.
-        public const float b2_maxTranslation = 2.0f;
-        public const float b2_maxTranslationSquared = (b2_maxTranslation * b2_maxTranslation);
+        public static float b2_maxTranslation = 2.0f;
+        public static float b2_maxTranslationSquared = (b2_maxTranslation * b2_maxTranslation);
 
         /// The maximum angular velocity of a body. This limit is very large and is used
         /// to prevent numerical problems. You shouldn't need to adjust this.
-        public const float b2_maxRotation = (0.5f * b2_pi);
-        public const float b2_maxRotationSquared = (b2_maxRotation * b2_maxRotation);
+        public static float b2_maxRotation = (0.5f * b2_pi);
+        public static float b2_maxRotationSquared = (b2_maxRotation * b2_maxRotation);
 
         /// This scale factor controls how fast overlap is resolved. Ideally this would be 1 so
         /// that overlap is removed in one time step. However using values close to 1 often lead

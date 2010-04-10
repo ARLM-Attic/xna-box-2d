@@ -24,7 +24,7 @@ using System;
 
 namespace Box2D.XNA
 {
-    public struct FixedArray2<T> where T : struct
+    public struct FixedArray2<T>
     {
         public T this[int index]
         {
@@ -60,7 +60,7 @@ namespace Box2D.XNA
         T _value1;
     }
 
-    public struct FixedArray3<T> where T : struct
+    public struct FixedArray3<T>
     {
         public T this[int index]
         {
@@ -102,7 +102,7 @@ namespace Box2D.XNA
         T _value2;
     }
 
-    public struct FixedArray4<T> where T : struct
+    public struct FixedArray4<T>
     {
         public T this[int index]
         {
@@ -150,7 +150,7 @@ namespace Box2D.XNA
         T _value3;
     }
 
-    public struct FixedArray8<T> where T : struct
+    public struct FixedArray8<T>
     {
         public T this[int index]
         {
