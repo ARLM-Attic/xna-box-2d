@@ -329,6 +329,28 @@ namespace Box2D.XNA
 	        _world._contactManager.FindNewContacts();
         }
 
+        // For teleporting a body without considering new contacts immediately.
+        public void SetTransformIgnoreContacts(Vector2 position, float angle)
+        {
+            Debug.Assert(_world.IsLocked == false);
+            if (_world.IsLocked == true)
+            {
+                return;
+            }
+
+            _xf.R.Set(angle);
+            _xf.Position = position;
+
+            _sweep.c0 = _sweep.c = MathUtils.Multiply(ref _xf, _sweep.localCenter);
+            _sweep.a0 = _sweep.a = angle;
+
+            BroadPhase broadPhase = _world._contactManager._broadPhase;
+            for (Fixture f = _fixtureList; f != null; f = f._next)
+            {
+                f.Synchronize(broadPhase, ref _xf, ref _xf);
+            }
+        }
+
 	    /// Get the body transform for the body's origin.
 	    /// @return the world transform of the body's origin.
 	    public void GetTransform(out Transform xf)
