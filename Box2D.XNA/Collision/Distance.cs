@@ -32,11 +32,11 @@ namespace Box2D.XNA
     {
 	    /// Initialize the proxy using the given shape. The shape
 	    /// must remain in scope while the proxy is in use.
-	    public void Set(Shape shape)
+	    public void Set(Shape shape, int index)
         {
             switch (shape.ShapeType)
 	        {
-	            case ShapeType.Circle:
+	        case ShapeType.Circle:
 		        {
 			        CircleShape circle = (CircleShape)shape;
                     _vertices[0] = circle._p;
@@ -45,7 +45,7 @@ namespace Box2D.XNA
 		        }
 		        break;
 
-                case ShapeType.Polygon:
+            case ShapeType.Polygon:
 		        {
 			        PolygonShape polygon = (PolygonShape)shape;
 			        _vertices = polygon._vertices;
@@ -53,6 +53,38 @@ namespace Box2D.XNA
 			        _radius = polygon._radius;
 		        }
 		        break;
+
+	        case ShapeType.Loop:
+	            {
+		            LoopShape loop = (LoopShape)shape;
+		            Debug.Assert(0 <= index && index < loop._count);
+
+		            _buffer[0] = loop._vertices[index];
+		            if (index + 1 < loop._count)
+		            {
+			            _buffer[1] = loop._vertices[index + 1];
+		            }
+		            else
+		            {
+			            _buffer[1] = loop._vertices[0];
+		            }
+
+                    _vertices[0] = _buffer[0];
+                    _vertices[1] = _buffer[1];
+		            _count = 2;
+		            _radius = loop._radius;
+	            }
+	            break;
+
+	        case ShapeType.Edge:
+	            {
+		            EdgeShape edge = (EdgeShape)shape;
+                    _vertices[0] = edge._vertex1;
+                    _vertices[1] = edge._vertex2;
+		            _count = 2;
+		            _radius = edge._radius;
+                }
+                break;
 
 	        default:
 		        Debug.Assert(false);
@@ -111,6 +143,7 @@ namespace Box2D.XNA
         }
 
 	    internal FixedArray8<Vector2> _vertices;
+        internal FixedArray2<Vector2> _buffer;
 	    internal int _count;
 	    internal float _radius;
     };
@@ -549,7 +582,7 @@ namespace Box2D.XNA
             simplex.ReadCache(ref cache, ref input.proxyA, ref input.transformA, ref input.proxyB, ref input.transformB);
 
 	        // Get simplex vertices as an array.
-	        const int k_maxIters = 20;
+	        int k_maxIters = 20;
 
 	        // These store the vertices of the last simplex so that we
 	        // can check for duplicates and prevent cycling.

@@ -92,7 +92,8 @@ namespace Box2D.XNA
     /// this as a massless, rigid rod.
     public class DistanceJoint : Joint
     {
-        	// Set/get the natural length.
+        /// Set/get the natural length.
+        /// Manipulating the length can lead to non-physical behavior when the frequency is zero.
         public void SetLength(float length)
         {
             _length = length;

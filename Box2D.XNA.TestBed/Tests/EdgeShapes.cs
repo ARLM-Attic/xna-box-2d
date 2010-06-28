@@ -186,6 +186,8 @@ namespace Box2D.XNA.TestBed.Tests
 
         public override void Step(Box2D.XNA.TestBed.Framework.Settings settings)
         {
+            bool advanceRay = settings.pause == 0 || settings.singleStep != 0;
+
  	        base.Step(settings);
 		    _debugDraw.DrawString(5, _textLine, "Press 1-5 to drop stuff");
 		    _textLine += 15;
@@ -218,8 +220,10 @@ namespace Box2D.XNA.TestBed.Tests
                 _debugDraw.DrawSegment(point1, point2, new Color(0.8f, 0.8f, 0.8f));
 		    }
 
-		    _angle += 0.25f * (float)Math.PI / 180.0f;
-
+            if (advanceRay)
+            {
+                _angle += 0.25f * (float)Math.PI / 180.0f;
+            }
         }
 
 	    static internal Test Create()
@@ -227,7 +231,7 @@ namespace Box2D.XNA.TestBed.Tests
 		    return new EdgeShapes();
 	    }
 
-        const int e_maxBodies = 256;
+        static int e_maxBodies = 256;
 
         int _bodyIndex;
 	    Body[] _bodies = new Body[e_maxBodies];

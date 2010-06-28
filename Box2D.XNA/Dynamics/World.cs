@@ -41,7 +41,7 @@ namespace Box2D.XNA
     /// management facilities.
     public class World
     {
-        /// construct a world object.
+        /// ruct a world object.
         /// @param gravity the world gravity vector.
         /// @param doSleep improve performance by not simulating inactive bodies.
         public World(Vector2 gravity, bool doSleep)
@@ -170,7 +170,7 @@ namespace Box2D.XNA
 			        DestructionListener.SayGoodbye(f0);
 		        }
 
-                f0.DestroyProxy(_contactManager._broadPhase);
+                f0.DestroyProxies(_contactManager._broadPhase);
 		        f0.Destroy();
 	        }
 	        b._fixtureList = null;
@@ -363,10 +363,10 @@ namespace Box2D.XNA
         }
 
 	    /// Take a time step. This performs collision detection, integration,
-	    /// and constraint solution.
+	    /// and raint solution.
 	    /// @param timeStep the amount of time to simulate, this should not vary.
-	    /// @param velocityIterations for the velocity constraint solver.
-	    /// @param positionIterations for the position constraint solver.
+	    /// @param velocityIterations for the velocity raint solver.
+	    /// @param positionIterations for the position raint solver.
 	    public void Step(float dt, int velocityIterations, int positionIterations)
         {
 	        // If new fixtures were added, we need to find the new contacts.
@@ -398,7 +398,7 @@ namespace Box2D.XNA
 	        // Update contacts. This is where some contacts are destroyed.
 	        _contactManager.Collide();
 
-	        // Integrate velocities, solve velocity constraints, and integrate positions.
+	        // Integrate velocities, solve velocity raints, and integrate positions.
 	        if (step.dt > 0.0f)
 	        {
 		        Solve(ref step);
@@ -453,6 +453,12 @@ namespace Box2D.XNA
         bool GetAutoClearForces()
         {
             return (_flags & WorldFlags.ClearForces) == WorldFlags.ClearForces;
+        }
+
+        /// Get the contact manager for testing.
+        ContactManager GetContactManager()
+        {
+            return _contactManager;
         }
 
 	    /// Call this to draw shapes and other debug draw data.
@@ -510,18 +516,20 @@ namespace Box2D.XNA
 		        Color color = new Color(0.3f, 0.9f, 0.9f);
 		        for (Contact c = _contactManager._contactList; c != null; c = c.GetNext())
 		        {
-			        Fixture fixtureA = c.GetFixtureA();
-			        Fixture fixtureB = c.GetFixtureB();
+			      /*  
+                   Fixture fixtureA = c.GetFixtureA();
+			       Fixture fixtureB = c.GetFixtureB();
 
-                    AABB aabbA;
-                    AABB aabbB;
-                    fixtureA.GetAABB(out aabbA);
-                    fixtureB.GetAABB(out aabbB);
+                   AABB aabbA;
+                   AABB aabbB;
+                   fixtureA.GetAABB(out aabbA);
+                   fixtureB.GetAABB(out aabbB);
 
-                    Vector2 cA = aabbA.GetCenter();
-                    Vector2 cB = aabbB.GetCenter();
+                   Vector2 cA = aabbA.GetCenter();
+                   Vector2 cB = aabbB.GetCenter();
 
-                    DebugDraw.DrawSegment(cA, cB, color);
+                   DebugDraw.DrawSegment(cA, cB, color);
+                  */
 		        }
 	        }
 
@@ -539,15 +547,19 @@ namespace Box2D.XNA
 
 			        for (Fixture f = b.GetFixtureList(); f != null; f = f.GetNext())
 			        {
-                        AABB aabb;
-                        bp.GetFatAABB(f._proxyId, out aabb);
-				        FixedArray8<Vector2> vs = new FixedArray8<Vector2>();
-				        vs[0] = new Vector2(aabb.lowerBound.X, aabb.lowerBound.Y);
-				        vs[1] = new Vector2(aabb.upperBound.X, aabb.lowerBound.Y);
-				        vs[2] = new Vector2(aabb.upperBound.X, aabb.upperBound.Y);
-				        vs[3] = new Vector2(aabb.lowerBound.X, aabb.upperBound.Y);
+                        for (int i = 0; i < f._proxyCount; ++i)
+				        {
+					        FixtureProxy proxy = f._proxies[i];
+					        AABB aabb;
+                            bp.GetFatAABB(proxy.proxyId, out aabb);
+                            FixedArray8<Vector2> vs = new FixedArray8<Vector2>();
+					        vs[0] = new Vector2(aabb.lowerBound.X, aabb.lowerBound.Y);
+					        vs[1] = new Vector2(aabb.upperBound.X, aabb.lowerBound.Y);
+					        vs[2] = new Vector2(aabb.upperBound.X, aabb.upperBound.Y);
+					        vs[3] = new Vector2(aabb.lowerBound.X, aabb.upperBound.Y);
 
-				        DebugDraw.DrawPolygon(ref vs, 4, color);
+					        DebugDraw.DrawPolygon(ref vs, 4, color);
+				        }
 			        }
 		        }
 	        }
@@ -568,20 +580,20 @@ namespace Box2D.XNA
 	    /// provided AABB.
 	    /// @param callback a user implemented callback class.
 	    /// @param aabb the query box.
-	    public void QueryAABB(Func<Fixture, bool> callback, ref AABB aabb)
+	    public void QueryAABB(Func<FixtureProxy, bool> callback, ref AABB aabb)
         {
             _queryAABBCallback = callback;
             _contactManager._broadPhase.Query(_queryAABBCallbackWrapper, ref aabb);
             _queryAABBCallback = null;
         }
 
-        Func<Fixture, bool> _queryAABBCallback;
+        Func<FixtureProxy, bool> _queryAABBCallback;
         Func<int, bool> _queryAABBCallbackWrapper;
 
         bool QueryAABBCallbackWrapper(int proxyId)
         {
-            Fixture fixture = (Fixture)_contactManager._broadPhase.GetUserData(proxyId);
-            return _queryAABBCallback(fixture);
+            FixtureProxy proxy = (FixtureProxy)_contactManager._broadPhase.GetUserData(proxyId);
+            return _queryAABBCallback(proxy);
         }
 
         /// Ray-cast the world for all fixtures in the path of the ray. Your callback
@@ -608,9 +620,11 @@ namespace Box2D.XNA
         float RayCastCallbackWrapper(ref RayCastInput input, int proxyId)
 	    {
 		    object userData = _contactManager._broadPhase.GetUserData(proxyId);
-		    Fixture fixture = (Fixture)userData;
+            FixtureProxy proxy = (FixtureProxy)userData;
+            Fixture fixture = proxy.fixture;
+            int index = proxy.childIndex;
 		    RayCastOutput output;
-		    bool hit = fixture.RayCast(out output, ref input);
+		    bool hit = fixture.RayCast(out output, ref input, index);
 
 		    if (hit)
 		    {
@@ -762,7 +776,7 @@ namespace Box2D.XNA
 		        stack[stackCount++] = seed;
 		        seed._flags |= BodyFlags.Island;
 
-		        // Perform a depth first search (DFS) on the constraint graph.
+		        // Perform a depth first search (DFS) on the raint graph.
 		        while (stackCount > 0)
 		        {
 			        // Grab the next body off the stack and add it to the island.
@@ -868,7 +882,8 @@ namespace Box2D.XNA
 	        // Synchronize fixtures, check for out of range bodies.
 	        for (Body b = _bodyList; b != null; b = b.GetNext())
 	        {
-		        if (!b.IsAwake() || !b.IsActive())
+		        // If a body was not in an island then it did not move.
+                if ((b._flags & BodyFlags.Island) != BodyFlags.Island)
 		        {
 			        continue;
 		        }
@@ -893,6 +908,7 @@ namespace Box2D.XNA
 	        // Find the minimum contact.
 	        Contact toiContact = null;
 	        float toi = 1.0f;
+            Body toiOther = null;
 	        bool found;
 	        int count;
 	        int iter = 0;
@@ -908,6 +924,11 @@ namespace Box2D.XNA
 		        found = false;
 		        for (ContactEdge ce = body._contactList; ce != null; ce = ce.Next)
 		        {
+                    if (ce.Contact == toiContact)
+                    {
+                        continue;
+                    }
+
 			        Body other = ce.Other;
 			        BodyType type = other.GetType();
 
@@ -918,6 +939,12 @@ namespace Box2D.XNA
 				        if ((other._flags & BodyFlags.Toi) == 0)
 				        {
 					        continue;
+				        }
+
+                        // No repeated hits on non-static bodies
+				        if (type != BodyType.Static && (ce.Contact._flags & ContactFlags.BulletHit) != 0)
+				        {
+						    continue;
 				        }
 			        }
 			        else if (type == BodyType.Dynamic)
@@ -940,6 +967,8 @@ namespace Box2D.XNA
 
 			        Fixture fixtureA = contact._fixtureA;
 			        Fixture fixtureB = contact._fixtureB;
+                    int indexA = contact._indexA;
+			        int indexB = contact._indexB;
 
 			        // Cull sensors.
 			        if (fixtureA.IsSensor() || fixtureB.IsSensor())
@@ -952,8 +981,8 @@ namespace Box2D.XNA
 
 			        // Compute the time of impact in interval [0, minTOI]
 			        TOIInput input = new TOIInput();
-			        input.proxyA.Set(fixtureA.GetShape());
-			        input.proxyB.Set(fixtureB.GetShape());
+			        input.proxyA.Set(fixtureA.GetShape(), indexA);
+			        input.proxyB.Set(fixtureB.GetShape(), indexB);
 			        input.sweepA = bodyA._sweep;
 			        input.sweepB = bodyB._sweep;
 			        input.tMax = toi;
@@ -965,6 +994,7 @@ namespace Box2D.XNA
 			        {
 				        toiContact = contact;
 				        toi = output.t;
+                        toiOther = other;
 				        found = true;
 			        }
 
@@ -976,12 +1006,19 @@ namespace Box2D.XNA
 
 	        if (toiContact == null)
 	        {
+                body.Advance(1.0f);
 		        return;
 	        }
 
-	        // Advance the body to its safe time.
 	        Sweep backup = body._sweep;
 	        body.Advance(toi);
+            toiContact.Update(_contactManager.ContactListener);
+	        if (toiContact.IsEnabled() == false)
+	        {
+		        // Contact disabled. Backup and recurse.
+		        body._sweep = backup;
+		        SolveTOI(body);
+	        }
 
 	        ++toiContact._toiCount;
 
@@ -994,7 +1031,7 @@ namespace Box2D.XNA
 
                 // Only perform correction with static bodies, so the
                 // body won't get pushed out of the world.
-		        if (type != BodyType.Static)
+		        if (type == BodyType.Dynamic)
 		        {
 			        continue;
 		        }
@@ -1016,23 +1053,15 @@ namespace Box2D.XNA
 		        }
 
 		        // The contact likely has some new contact points. The listener
-		        // gives the user a chance to disable the contact;
-                contact.Update(_contactManager.ContactListener);
+		        // gives the user a chance to disable the contact.
+		        if (contact != toiContact)
+		        {
+			        contact.Update(_contactManager.ContactListener);
+		        }
 
 		        // Did the user disable the contact?
 		        if (contact.IsEnabled() == false)
 		        {
-			        if (contact == toiContact)
-			        {
-				        // Restore the body's sweep.
-				        body._sweep = backup;
-				        body.SynchronizeTransform();
-
-				        // Recurse because the TOI has been invalidated.
-				        SolveTOI(body);
-				        return;
-			        }
-
 			        // Skip this contact.
 			        continue;
 		        }
@@ -1049,7 +1078,7 @@ namespace Box2D.XNA
 	        // Reduce the TOI body's overlap with the contact island.
 	        _toiSolver.Initialize(_toiContacts, count, body);
 
-	        const float k_toiBaumgarte = 0.75f;
+	        float k_toiBaumgarte = 0.75f;
 	        //bool solved = false;
 	        for (int i = 0; i < 20; ++i)
 	        {
@@ -1059,6 +1088,11 @@ namespace Box2D.XNA
 			        //solved = true;
 			        break;
 		        }
+	        }
+
+            if (toiOther.GetType() != BodyType.Static)
+	        {
+		        toiContact._flags |= ContactFlags.BulletHit;
 	        }
         }
 
@@ -1080,8 +1114,9 @@ namespace Box2D.XNA
 	        // Initialize the TOI flag.
 	        for (Body body = _bodyList; body != null; body = body._next)
 	        {
-		        // Sleeping, kinematic, and static bodies will not be affected by the TOI event.
-		        if (body.IsAwake() == false || body.GetType() == BodyType.Kinematic || body.GetType() == BodyType.Static)
+		        // Kinematic, and static bodies will not be affected by the TOI event.
+		        // If a body was not in an island then it did not move.
+		        if ((body._flags & BodyFlags.Island) == 0 || body.GetType() == BodyType.Kinematic || body.GetType() == BodyType.Static)
 		        {
 			        body._flags |= BodyFlags.Toi;
 		        }
@@ -1094,7 +1129,7 @@ namespace Box2D.XNA
 	        // Collide non-bullets.
 	        for (Body body = _bodyList; body != null; body = body._next)
 	        {
-		        if (body.GetType() != BodyType.Dynamic || body.IsAwake() == false)
+		        if ((body._flags & BodyFlags.Toi) != BodyFlags.None)
 		        {
 			        continue;
 		        }
@@ -1112,7 +1147,7 @@ namespace Box2D.XNA
 	        // Collide bullets.
 	        for (Body body = _bodyList; body != null; body = body._next)
 	        {
-		        if (body.GetType() != BodyType.Dynamic || body.IsAwake() == false)
+                if ((body._flags & BodyFlags.Toi) != BodyFlags.None)
 		        {
 			        continue;
 		        }
@@ -1200,6 +1235,30 @@ namespace Box2D.XNA
 			        }
 
 			        DebugDraw.DrawSolidPolygon(ref vertices, vertexCount, color);
+		        }
+		        break;
+
+            case ShapeType.Edge:
+		        {
+			        EdgeShape edge = (EdgeShape)fixture.GetShape();
+			        Vector2 v1 = MathUtils.Multiply(ref xf, edge._vertex1);
+			        Vector2 v2 = MathUtils.Multiply(ref xf, edge._vertex2);
+			        DebugDraw.DrawSegment(v1, v2, color);
+		        }
+		        break;
+
+	        case ShapeType.Loop:
+		        {
+			        LoopShape loop = (LoopShape)fixture.GetShape();
+			        int count = loop._count;
+
+			        Vector2 v1 = MathUtils.Multiply(ref xf, loop._vertices[count - 1]);
+			        for (int i = 0; i < count; ++i)
+			        {
+				        Vector2 v2 = MathUtils.Multiply(ref xf, loop._vertices[i]);
+				        DebugDraw.DrawSegment(v1, v2, color);
+				        v1 = v2;
+			        }
 		        }
 		        break;
 	        }

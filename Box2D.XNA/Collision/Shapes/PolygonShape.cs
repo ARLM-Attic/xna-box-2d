@@ -49,6 +49,12 @@ namespace Box2D.XNA
             return clone;
         }
 
+        /// @see b2Shape::GetChildCount
+        public override int GetChildCount()
+        {
+            return 1;
+        }
+
 	    /// Copy vertices. This assumes the vertices define a convex polygon.
 	    /// It is assumed that the exterior is the the right of each edge.
         public void Set(Vector2[] vertices, int count)
@@ -237,7 +243,7 @@ namespace Box2D.XNA
 	        return true;
         }
 
-        public override bool RayCast(out RayCastOutput output, ref RayCastInput input, ref Transform xf)
+        public override bool RayCast(out RayCastOutput output, ref RayCastInput input, ref Transform xf, int childIndex)
         {
             output = new RayCastOutput();
 
@@ -339,7 +345,11 @@ namespace Box2D.XNA
                         }
                     }
 
-                    if (upper < lower - Settings.b2_epsilon)
+                    // The use of epsilon here causes the assert on lower to trip
+                    // in some cases. Apparently the use of epsilon was to make edge
+                    // shapes work, but now those are handled separately.
+                    //if (upper < lower - b2_epsilon)
+                    if (upper < lower)
                     {
                         return false;
                     }
@@ -360,7 +370,7 @@ namespace Box2D.XNA
 
 
 	    /// @see Shape.ComputeAABB
-        public override void ComputeAABB(out AABB aabb, ref Transform xf)
+        public override void ComputeAABB(out AABB aabb, ref Transform xf, int childIndex)
         {
 	        Vector2 lower = MathUtils.Multiply(ref xf, _vertices[0]);
 	        Vector2 upper = lower;
@@ -465,47 +475,11 @@ namespace Box2D.XNA
 	        massData.I = density * I;
         }
 
-	    /// Get the supporting vertex index in the given direction.
-	    public override int GetSupport(Vector2 d)
-        {
-	        int bestIndex = 0;
-	        float bestValue = Vector2.Dot(_vertices[0], d);
-	        for (int i = 1; i < _vertexCount; ++i)
-	        {
-		        float value = Vector2.Dot(_vertices[i], d);
-		        if (value > bestValue)
-		        {
-			        bestIndex = i;
-			        bestValue = value;
-		        }
-	        }
-
-	        return bestIndex;
-        }
-
-	    /// Get the supporting vertex in the given direction.
-        public override Vector2 GetSupportVertex(Vector2 d)
-        {
-	        int bestIndex = 0;
-	        float bestValue = Vector2.Dot(_vertices[0], d);
-	        for (int i = 1; i < _vertexCount; ++i)
-	        {
-		        float value = Vector2.Dot(_vertices[i], d);
-		        if (value > bestValue)
-		        {
-			        bestIndex = i;
-			        bestValue = value;
-		        }
-	        }
-
-	        return _vertices[bestIndex];
-        }
-
 	    /// Get the vertex count.
-        public override int GetVertexCount() { return _vertexCount; }
+        public int GetVertexCount() { return _vertexCount; }
 
 	    /// Get a vertex by index.
-        public override Vector2 GetVertex(int index)
+        public Vector2 GetVertex(int index)
         {
 	        Debug.Assert(0 <= index && index < _vertexCount);
 	        return _vertices[index];

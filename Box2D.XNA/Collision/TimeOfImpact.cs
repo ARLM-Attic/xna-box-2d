@@ -62,7 +62,8 @@ namespace Box2D.XNA
     {
         public SeparationFunction(ref SimplexCache cache,
             ref DistanceProxy proxyA, ref Sweep sweepA,
-            ref DistanceProxy proxyB, ref Sweep sweepB)
+            ref DistanceProxy proxyB, ref Sweep sweepB,
+            float t1)
 	    {
             _localPoint = Vector2.Zero;
             _proxyA = proxyA;
@@ -74,8 +75,8 @@ namespace Box2D.XNA
             _sweepB = sweepB;
 
             Transform xfA, xfB;
-            _sweepA.GetTransform(out xfA, 0.0f);
-            _sweepB.GetTransform(out xfB, 0.0f);
+            _sweepA.GetTransform(out xfA, t1);
+            _sweepB.GetTransform(out xfB, t1);
 
 		    if (count == 1)
 		    {
@@ -295,14 +296,20 @@ namespace Box2D.XNA
 	        Sweep sweepA = input.sweepA;
 	        Sweep sweepB = input.sweepB;
 
+            // Large rotations can make the root finder fail, so we normalize the
+            // sweep angles.
+            sweepA.Normalize();
+            sweepB.Normalize();
+
             float tMax = input.tMax;
 
-            float target = Settings.b2_linearSlop;
+            float totalRadius = input.proxyA._radius + input.proxyB._radius;
+            float target = Math.Max(Settings.b2_linearSlop, totalRadius - 3.0f * Settings.b2_linearSlop);
             float tolerance = 0.25f * Settings.b2_linearSlop;
             Debug.Assert(target > tolerance);
 
             float t1 = 0.0f;
-	        const int k_maxIterations = 1000;
+	        int k_maxIterations = 20;
 	        int iter = 0;
 	        
 	        // Prepare input for distance query.
@@ -336,12 +343,21 @@ namespace Box2D.XNA
 		            break;
 	            }
 
-                SeparationFunction fcn = new SeparationFunction(ref cache, ref input.proxyA, ref sweepA, ref input.proxyB, ref sweepB);
+                if (distanceOutput.distance < target + tolerance)
+		        {
+			        // Victory!
+			        output.State = TOIOutputState.Touching;
+			        output.t = t1;
+			        break;
+		        }
+
+                SeparationFunction fcn = new SeparationFunction(ref cache, ref input.proxyA, ref sweepA, ref input.proxyB, ref sweepB, t1);
 
                 // Compute the TOI on the separating axis. We do this by successively
 		        // resolving the deepest point. This loop is bounded by the number of vertices.
 		        bool done = false;
 		        float t2 = tMax;
+                int pushBackIter = 0;
 		        for (;;)
 		        {
 			        // Find the deepest point at t2. Store the witness point indices.
@@ -358,13 +374,11 @@ namespace Box2D.XNA
 				        break;
 			        }
 
-			        // Is the final configuration touching?
+			        // Has the separation reached tolerance?
 			        if (s2 > target - tolerance)
 			        {
-				        // Victory!
-				        output.State = TOIOutputState.Touching;
-				        output.t = t2;
-				        done = true;
+				        // Advance the sweeps
+				        t1 = t2;
 				        break;
 			        }
 
@@ -440,6 +454,13 @@ namespace Box2D.XNA
 			        }
 
 			        b2_toiMaxRootIters = Math.Max(b2_toiMaxRootIters, rootIterCount);
+
+                    ++pushBackIter;
+
+			        if (pushBackIter == Settings.b2_maxPolygonVertices)
+			        {
+				        break;
+			        }
 		        }
 
 		        ++iter;

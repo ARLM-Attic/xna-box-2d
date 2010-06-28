@@ -56,8 +56,8 @@ namespace Box2D.XNA.TestBed.Tests
 		    base.Step(settings);
 
 		    DistanceInput input = new DistanceInput();
-            input.proxyA.Set(_polygonA);
-            input.proxyB.Set(_polygonB);
+            input.proxyA.Set(_polygonA, 0);
+            input.proxyB.Set(_polygonB, 0);
 		    input.transformA = _transformA;
 		    input.transformB = _transformB;
 		    input.useRadii = true;

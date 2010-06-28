@@ -23,6 +23,8 @@
 using System;
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Box2D.XNA
 {
@@ -40,12 +42,14 @@ namespace Box2D.XNA
 
         /// This is the fattened AABB.
 	    internal AABB aabb;
+
         internal object userData;
 
         internal int parentOrNext;
-
         internal int child1;
         internal int child2;
+
+        internal int leafCount;
     };
 
     /// A dynamic tree arranges data in a binary tree to accelerate
@@ -57,9 +61,9 @@ namespace Box2D.XNA
     /// Nodes are pooled and relocatable, so we use node indices rather than pointers.
     public class DynamicTree
     {
-        internal const int NullNode = -1;
+        internal static int NullNode = -1;
 
-	    /// constructing the tree initializes the node pool.
+	    /// ructing the tree initializes the node pool.
 	    public DynamicTree()
         {
 	        _root = NullNode;
@@ -89,6 +93,7 @@ namespace Box2D.XNA
 	        _nodes[proxyId].aabb.lowerBound = aabb.lowerBound - r;
 	        _nodes[proxyId].aabb.upperBound = aabb.upperBound + r;
 	        _nodes[proxyId].userData = userData;
+            _nodes[proxyId].leafCount = 1;
 
 	        InsertLeaf(proxyId);
             
@@ -183,8 +188,15 @@ namespace Box2D.XNA
 		        int bit = 0;
 		        while (_nodes[node].IsLeaf() == false)
 		        {
-                    node = ((_path >> bit) & 1) == 0 ? _nodes[node].child1 : _nodes[node].child1;
-			        bit = (bit + 1) & (8 * sizeof(uint) - 1);
+			        // Child selector based on a bit in the path
+			        int selector = (_path >> bit) & 1;
+
+			        // Select the child nod
+			        node = (selector == 0) ? _nodes[node].child1 : _nodes[node].child2;
+
+			        // Keep bit between 0 and 31 because _path has 32 bits
+			        // bit = (bit + 1) % 31
+			        bit = (bit + 1) & 0x1F;
 		        }
 		        ++_path;
 
@@ -208,25 +220,25 @@ namespace Box2D.XNA
 	        fatAABB = _nodes[proxyId].aabb;
         }
 
-	    /// Compute the height of the tree.
+        /// Compute the height of the binary tree in O(N) time. Should not be
+        /// called often.
 	    public int ComputeHeight()
         {
 	        return ComputeHeight(_root);
         }
 
-        const int k_stackSize = 128;
-        static int[] stack = new int[k_stackSize];
+        static Stack<int> stack = new Stack<int>(256);
 
 	    /// Query an AABB for overlapping proxies. The callback class
 	    /// is called for each proxy that overlaps the supplied AABB.
 	    public void Query(Func<int, bool> callback, ref AABB aabb)
         {
-	        int count = 0;
-	        stack[count++] = _root;
+            stack.Clear();
+	        stack.Push(_root);
 
-	        while (count > 0)
+	        while (stack.Count > 0)
 	        {
-		        int nodeId = stack[--count];
+		        int nodeId = stack.Pop();
 		        if (nodeId == NullNode)
 		        {
 			        continue;
@@ -246,22 +258,15 @@ namespace Box2D.XNA
 			        }
 			        else
 			        {
-                        if (count < k_stackSize)
-                        {
-                            stack[count++] = node.child1;
-                        }
-
-                        if (count < k_stackSize)
-				        {
-				            stack[count++] = node.child2;
-                        }
+                        stack.Push(node.child1);
+				        stack.Push(node.child2);
 			        }
 		        }
 	        }
         }
 
 	    /// Ray-cast against the proxies in the tree. This relies on the callback
-	    /// to perform a exact ray-cast in the case were the proxy contains a shape.
+	    /// to perform a exact ray-cast in the case were the proxy contains a Shape.
 	    /// The callback also performs the any collision filtering. This has performance
 	    /// roughly equal to k * log(n), where k is the number of collisions and n is the
 	    /// number of proxies in the tree.
@@ -292,12 +297,12 @@ namespace Box2D.XNA
 		        segmentAABB.upperBound = Vector2.Max(p1, t);
 	        }
 
-	        int count = 0;
-	        stack[count++] = _root;
+            stack.Clear();
+	        stack.Push(_root);
 
-	        while (count > 0)
+	        while (stack.Count > 0)
 	        {
-		        int nodeId = stack[--count];
+		        int nodeId = stack.Pop();
 		        if (nodeId == NullNode)
 		        {
 			        continue;
@@ -346,17 +351,38 @@ namespace Box2D.XNA
 		        }
 		        else
 		        {
-                    if (count < k_stackSize)
-                    {
-                        stack[count++] = node.child1;
-                    }
-
-                    if (count < k_stackSize)
-                    {
-                        stack[count++] = node.child2;
-                    }
+                    stack.Push(node.child1);
+			        stack.Push(node.child2);
 		        }
 	        }
+        }
+
+        private int CountLeaves(int nodeId) 
+        {
+	        if (nodeId == NullNode)
+	        {
+		        return 0;
+	        }
+
+	        Debug.Assert(0 <= nodeId && nodeId < _nodeCapacity);
+	        DynamicTreeNode node = _nodes[nodeId];
+
+	        if (node.IsLeaf())
+	        {
+		        Debug.Assert(node.leafCount == 1);
+		        return 1;
+	        }
+
+	        int count1 = CountLeaves(node.child1);
+	        int count2 = CountLeaves(node.child2);
+	        int count = count1 + count2;
+	        Debug.Assert(count == node.leafCount);
+	        return count;
+        }
+
+        private void Validate() 
+        {
+	        CountLeaves(_root);	
         }
 
         private int AllocateNode()
@@ -388,6 +414,7 @@ namespace Box2D.XNA
             _nodes[nodeId].parentOrNext = NullNode;
 	        _nodes[nodeId].child1 = NullNode;
 	        _nodes[nodeId].child2 = NullNode;
+            _nodes[nodeId].leafCount = 0;
 	        ++_nodeCount;
 	        return nodeId;
         }
@@ -408,82 +435,83 @@ namespace Box2D.XNA
 	        if (_root == NullNode)
 	        {
 		        _root = leaf;
-                _nodes[_root].parentOrNext = NullNode;
+		        _nodes[_root].parentOrNext = NullNode;
 		        return;
 	        }
 
-	        // Find the best sibling for this node.
-	        Vector2 center = _nodes[leaf].aabb.GetCenter();
+	        // Find the best sibling for this node
+	        AABB leafAABB = _nodes[leaf].aabb;
+	        Vector2 leafCenter = leafAABB.GetCenter();
 	        int sibling = _root;
-	        if (_nodes[sibling].IsLeaf() == false)
+	        while (_nodes[sibling].IsLeaf() == false)
 	        {
-		        do 
+		        // Expand the node's AABB.
+		        _nodes[sibling].aabb.Combine(ref leafAABB);
+		        _nodes[sibling].leafCount += 1;
+
+		        int child1 = _nodes[sibling].child1;
+		        int child2 = _nodes[sibling].child2;
+
+#if false
+		        // This seems to create imbalanced trees
+		        Vector2 delta1 = Math.Abs(_nodes[child1].aabb.GetCenter() - leafCenter);
+		        Vector2 delta2 = Math.Abs(_nodes[child2].aabb.GetCenter() - leafCenter);
+
+		        float norm1 = delta1.x + delta1.y;
+		        float norm2 = delta2.x + delta2.y;
+#else
+		        // Surface area heuristic
+		        AABB aabb1 = new AABB();
+                AABB  aabb2 = new AABB();
+		        aabb1.Combine(ref leafAABB, ref _nodes[child1].aabb);
+		        aabb2.Combine(ref leafAABB, ref _nodes[child2].aabb);
+		        float norm1 = (_nodes[child1].leafCount + 1) * aabb1.GetPerimeter();
+		        float norm2 = (_nodes[child2].leafCount + 1) * aabb2.GetPerimeter();
+#endif
+
+		        if (norm1 < norm2)
 		        {
-			        int child1 = _nodes[sibling].child1;
-			        int child2 = _nodes[sibling].child2;
-
-			        Vector2 delta1 = MathUtils.Abs(_nodes[child1].aabb.GetCenter() - center);
-			        Vector2 delta2 = MathUtils.Abs(_nodes[child2].aabb.GetCenter() - center);
-
-			        float norm1 = delta1.X + delta1.Y;
-			        float norm2 = delta2.X + delta2.Y;
-
-			        if (norm1 < norm2)
-			        {
-				        sibling = child1;
-			        }
-			        else
-			        {
-				        sibling = child2;
-			        }
-
-		        }
-		        while(_nodes[sibling].IsLeaf() == false);
-	        }
-
-	        // Create a parent for the siblings.
-            int node1 = _nodes[sibling].parentOrNext;
-	        int node2 = AllocateNode();
-            _nodes[node2].parentOrNext = node1;
-            _nodes[node2].userData = null;
-	        _nodes[node2].aabb.Combine(ref _nodes[leaf].aabb, ref _nodes[sibling].aabb);
-
-	        if (node1 != NullNode)
-	        {
-                if (_nodes[_nodes[sibling].parentOrNext].child1 == sibling)
-		        {
-			        _nodes[node1].child1 = node2;
+			        sibling = child1;
 		        }
 		        else
 		        {
-			        _nodes[node1].child2 = node2;
+			        sibling = child2;
 		        }
+	        }
 
-		        _nodes[node2].child1 = sibling;
-		        _nodes[node2].child2 = leaf;
-                _nodes[sibling].parentOrNext = node2;
-                _nodes[leaf].parentOrNext = node2;
+	        // Create a new parent for the siblings.
+	        int oldParent = _nodes[sibling].parentOrNext;
+	        int newParent = AllocateNode();
+            _nodes[newParent].parentOrNext = oldParent;
+	        _nodes[newParent].userData = null;
+	        _nodes[newParent].aabb.Combine(ref leafAABB, ref _nodes[sibling].aabb);
+	        _nodes[newParent].leafCount = _nodes[sibling].leafCount + 1;
 
-		        do 
+	        if (oldParent != NullNode)
+	        {
+		        // The sibling was not the root.
+		        if (_nodes[oldParent].child1 == sibling)
 		        {
-			        if (_nodes[node1].aabb.Contains(ref _nodes[node2].aabb))
-			        {
-				        break;
-			        }
-
-			        _nodes[node1].aabb.Combine(ref _nodes[_nodes[node1].child1].aabb, ref _nodes[_nodes[node1].child2].aabb);
-			        node2 = node1;
-                    node1 = _nodes[node1].parentOrNext;
+			        _nodes[oldParent].child1 = newParent;
 		        }
-		        while(node1 != NullNode);
+		        else
+		        {
+			        _nodes[oldParent].child2 = newParent;
+		        }
+
+		        _nodes[newParent].child1 = sibling;
+		        _nodes[newParent].child2 = leaf;
+                _nodes[sibling].parentOrNext = newParent;
+                _nodes[leaf].parentOrNext = newParent;
 	        }
 	        else
 	        {
-		        _nodes[node2].child1 = sibling;
-		        _nodes[node2].child2 = leaf;
-                _nodes[sibling].parentOrNext = node2;
-                _nodes[leaf].parentOrNext = node2;
-		        _root = node2;
+		        // The sibling was the root.
+		        _nodes[newParent].child1 = sibling;
+		        _nodes[newParent].child2 = leaf;
+                _nodes[sibling].parentOrNext = newParent;
+                _nodes[leaf].parentOrNext = newParent;
+		        _root = newParent;
 	        }
         }
 
@@ -495,51 +523,50 @@ namespace Box2D.XNA
 		        return;
 	        }
 
-            int node2 = _nodes[leaf].parentOrNext;
-            int node1 = _nodes[node2].parentOrNext;
+            int parent = _nodes[leaf].parentOrNext;
+            int grandParent = _nodes[parent].parentOrNext;
 	        int sibling;
-	        if (_nodes[node2].child1 == leaf)
+	        if (_nodes[parent].child1 == leaf)
 	        {
-		        sibling = _nodes[node2].child2;
+		        sibling = _nodes[parent].child2;
 	        }
 	        else
 	        {
-		        sibling = _nodes[node2].child1;
+		        sibling = _nodes[parent].child1;
 	        }
 
-	        if (node1 != NullNode)
+	        if (grandParent != NullNode)
 	        {
-		        // Destroy node2 and connect node1 to sibling.
-		        if (_nodes[node1].child1 == node2)
+		        // Destroy parent and connect sibling to grandParent.
+		        if (_nodes[grandParent].child1 == parent)
 		        {
-			        _nodes[node1].child1 = sibling;
+			        _nodes[grandParent].child1 = sibling;
 		        }
 		        else
 		        {
-			        _nodes[node1].child2 = sibling;
+			        _nodes[grandParent].child2 = sibling;
 		        }
-                _nodes[sibling].parentOrNext = node1;
-		        FreeNode(node2);
+                _nodes[sibling].parentOrNext = grandParent;
+		        FreeNode(parent);
 
 		        // Adjust ancestor bounds.
-		        while (node1 != NullNode)
+		        parent = grandParent;
+		        while (parent != NullNode)
 		        {
-			        AABB oldAABB = _nodes[node1].aabb;
-			        _nodes[node1].aabb.Combine(ref _nodes[_nodes[node1].child1].aabb, ref _nodes[_nodes[node1].child2].aabb);
+			        AABB oldAABB = _nodes[parent].aabb;
+			        _nodes[parent].aabb.Combine(ref _nodes[_nodes[parent].child1].aabb, ref _nodes[_nodes[parent].child2].aabb);
 
-			        if (oldAABB.Contains(ref _nodes[node1].aabb))
-			        {
-				        break;
-			        }
+			        Debug.Assert(_nodes[parent].leafCount > 0);
+			        _nodes[parent].leafCount -= 1;
 
-                    node1 = _nodes[node1].parentOrNext;
+                    parent = _nodes[parent].parentOrNext;
 		        }
 	        }
 	        else
 	        {
 		        _root = sibling;
                 _nodes[sibling].parentOrNext = NullNode;
-		        FreeNode(node2);
+		        FreeNode(parent);
 	        }
         }
 

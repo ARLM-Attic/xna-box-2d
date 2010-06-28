@@ -48,7 +48,6 @@ namespace Box2D.XNA
     public interface IContactFilter
     {
         bool ShouldCollide(Fixture fixtureA, Fixture fixtureB);
-        bool RayCollide(object userData, Fixture fixture);
     }
 
     public class DefaultContactFilter : IContactFilter
@@ -69,17 +68,6 @@ namespace Box2D.XNA
 	        bool collide = (filterA.maskBits & filterB.categoryBits) != 0 && (filterA.categoryBits & filterB.maskBits) != 0;
 	        
             return collide;
-        }
-
-        public bool RayCollide(object userData, Fixture fixture)
-        {
-            // By default, cast userData as a fixture, and then collide if the shapes would collide
-            if (userData == null)
-            {
-                return true;
-            }
-
-            return ShouldCollide((Fixture)userData, fixture);
         }
     }
 

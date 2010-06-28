@@ -289,8 +289,9 @@ namespace Box2D.XNA.TestBed.Framework
 
 	        // Query the world for overlapping shapes.
             _world.QueryAABB(
-                (fixture) =>
+                (fixtureProxy) =>
                 {
+                    var fixture = fixtureProxy.fixture;
                     Body body = fixture.GetBody();
                     if (body.GetType() == BodyType.Dynamic)
                     {

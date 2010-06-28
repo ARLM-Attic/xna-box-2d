@@ -37,10 +37,13 @@ namespace Box2D.XNA
         }
 
 	    // Broad-phase callback.
-        internal void AddPair(Fixture proxyUserDataA, Fixture proxyUserDataB)
+        internal void AddPair(FixtureProxy proxyA, FixtureProxy proxyB)
         {
-            Fixture fixtureA = proxyUserDataA;
-	        Fixture fixtureB = proxyUserDataB;
+            Fixture fixtureA = proxyA.fixture;
+            Fixture fixtureB = proxyB.fixture;
+
+            int indexA = proxyA.childIndex;
+            int indexB = proxyB.childIndex;
 
 	        Body bodyA = fixtureA.GetBody();
 	        Body bodyB = fixtureB.GetBody();
@@ -59,14 +62,17 @@ namespace Box2D.XNA
 		        {
 			        Fixture fA = edge.Contact.GetFixtureA();
 			        Fixture fB = edge.Contact.GetFixtureB();
-			        if (fA == fixtureA && fB == fixtureB)
-			        {
-				        // A contact already exists.
-				        return;
-			        }
+                    int iA = edge.Contact.GetChildIndexA();
+                    int iB = edge.Contact.GetChildIndexB();
 
-			        if (fA == fixtureB && fB == fixtureA)
-			        {
+                    if (fA == fixtureA && fB == fixtureB && iA == indexA && iB == indexB)
+                    {
+                        // A contact already exists.
+                        return;
+                    }
+
+                    if (fA == fixtureB && fB == fixtureA && iA == indexB && iB == indexA)
+                    {
 				        // A contact already exists.
 				        return;
 			        }
@@ -82,17 +88,19 @@ namespace Box2D.XNA
 	        }
 
 	        // Check user filtering.
-	        if (ContactFilter.ShouldCollide(fixtureA, fixtureB) == false)
+            if (ContactFilter != null && ContactFilter.ShouldCollide(fixtureA, fixtureB) == false)
 	        {
 		        return;
 	        }
 
 	        // Call the factory.
-	        Contact c = Contact.Create(fixtureA, fixtureB);
+	        Contact c = Contact.Create(fixtureA, indexA, fixtureB, indexB);
 
 	        // Contact creation may swap fixtures.
 	        fixtureA = c.GetFixtureA();
 	        fixtureB = c.GetFixtureB();
+            indexA = c.GetChildIndexA();
+            indexB = c.GetChildIndexB();
 	        bodyA = fixtureA.GetBody();
 	        bodyB = fixtureB.GetBody();
 
@@ -136,7 +144,7 @@ namespace Box2D.XNA
 
 	    internal void FindNewContacts()
         {
-            _broadPhase.UpdatePairs<Fixture>(_addPair);
+            _broadPhase.UpdatePairs<FixtureProxy>(_addPair);
         }
 
 	    internal void Destroy(Contact c)
@@ -146,7 +154,7 @@ namespace Box2D.XNA
 	        Body bodyA = fixtureA.GetBody();
 	        Body bodyB = fixtureB.GetBody();
 
-	        if (c.IsTouching())
+            if (ContactListener != null && c.IsTouching())
 	        {
 		        ContactListener.EndContact(c);
 	        }
@@ -212,6 +220,8 @@ namespace Box2D.XNA
 	        {
 		        Fixture fixtureA = c.GetFixtureA();
 		        Fixture fixtureB = c.GetFixtureB();
+                int indexA = c.GetChildIndexA();
+                int indexB = c.GetChildIndexB();
 		        Body bodyA = fixtureA.GetBody();
 		        Body bodyB = fixtureB.GetBody();
 
@@ -234,7 +244,7 @@ namespace Box2D.XNA
 			        }
 
 			        // Check user filtering.
-			        if (ContactFilter.ShouldCollide(fixtureA, fixtureB) == false)
+                    if (ContactFilter != null && ContactFilter.ShouldCollide(fixtureA, fixtureB) == false)
 			        {
 				        Contact cNuke = c;
 				        c = cNuke.GetNext();
@@ -246,8 +256,8 @@ namespace Box2D.XNA
 			        c._flags &= ~ContactFlags.Filter;
 		        }
 
-		        int proxyIdA = fixtureA._proxyId;
-		        int proxyIdB = fixtureB._proxyId;
+                int proxyIdA = fixtureA._proxies[indexA].proxyId;
+                int proxyIdB = fixtureB._proxies[indexB].proxyId;
 
                 bool overlap = _broadPhase.TestOverlap(proxyIdA, proxyIdB);
 
@@ -273,6 +283,6 @@ namespace Box2D.XNA
         internal IContactFilter ContactFilter { get; set; }
         internal IContactListener ContactListener { get; set; }
 
-        Action<Fixture, Fixture> _addPair;
+        Action<FixtureProxy, FixtureProxy> _addPair;
     }
 }

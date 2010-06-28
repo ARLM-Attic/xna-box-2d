@@ -129,6 +129,12 @@ namespace Box2D.XNA.TestBed.Tests
 			    _debugDraw.DrawPoint(p, 6.0f, cr);
 		    }
 
+            {
+                int height = _tree.ComputeHeight();
+                _debugDraw.DrawString(5, _textLine, "dynamic tree height = %d", height);
+                _textLine += 15;
+            }
+
 		    ++_stepCount;
 	    }
 
@@ -221,7 +227,7 @@ namespace Box2D.XNA.TestBed.Tests
 	    {
 		    for (int i = 0; i < e_actorCount; ++i)
 		    {
-			    int j = Rand.rand.Next() % e_actorCount;
+                int j = Rand.rand.Next() % e_actorCount;
 			    Actor actor = _actors[j];
 			    if (actor.proxyId == -1)
 			    {
@@ -236,7 +242,7 @@ namespace Box2D.XNA.TestBed.Tests
 	    {
 		    for (int i = 0; i < e_actorCount; ++i)
 		    {
-			    int j = Rand.rand.Next() % e_actorCount;
+                int j = Rand.rand.Next() % e_actorCount;
 			    Actor actor = _actors[j];
 			    if (actor.proxyId != -1)
 			    {
@@ -251,7 +257,7 @@ namespace Box2D.XNA.TestBed.Tests
 	    {
 		    for (int i = 0; i < e_actorCount; ++i)
 		    {
-			    int j = Rand.rand.Next() % e_actorCount;
+                int j = Rand.rand.Next() % e_actorCount;
 			    Actor actor = _actors[j];
 			    if (actor.proxyId == -1)
 			    {

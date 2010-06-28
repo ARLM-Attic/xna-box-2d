@@ -187,7 +187,7 @@ namespace Box2D.XNA
             if ((_flags & BodyFlags.Active) == BodyFlags.Active)
             {
                 BroadPhase broadPhase = _world._contactManager._broadPhase;
-                fixture.CreateProxy(broadPhase, ref _xf);
+                fixture.CreateProxies(broadPhase, ref _xf);
             }
 
 	        fixture._next = _fixtureList;
@@ -285,11 +285,7 @@ namespace Box2D.XNA
                 Debug.Assert(fixture._proxyId != BroadPhase.NullProxy);
 
                 BroadPhase broadPhase = _world._contactManager._broadPhase;
-                fixture.DestroyProxy(broadPhase);
-            }
-            else
-            {
-                Debug.Assert(fixture._proxyId == BroadPhase.NullProxy);
+                fixture.DestroyProxies(broadPhase);
             }
 
 	        fixture.Destroy();
@@ -304,6 +300,7 @@ namespace Box2D.XNA
 
 	    /// Set the position of the body's origin and rotation.
 	    /// This breaks any contacts and wakes the other bodies.
+        /// Manipulating a body's transform may cause non-physical behavior.
 	    /// @param position the world position of the body's local origin.
 	    /// @param angle the world rotation in radians.
 	    public void SetTransform(Vector2 position, float angle)
@@ -841,7 +838,7 @@ namespace Box2D.XNA
                 BroadPhase broadPhase = _world._contactManager._broadPhase;
                 for (Fixture f = _fixtureList; f != null; f = f._next)
                 {
-                    f.CreateProxy(broadPhase, ref _xf);
+                    f.CreateProxies(broadPhase, ref _xf);
                 }
 
                 // Contacts are created the next time step.
@@ -854,7 +851,7 @@ namespace Box2D.XNA
                 BroadPhase broadPhase = _world._contactManager._broadPhase;
                 for (Fixture f = _fixtureList; f != null; f = f._next)
                 {
-                    f.DestroyProxy(broadPhase);
+                    f.DestroyProxies(broadPhase);
                 }
 
                 // Destroy the attached contacts.

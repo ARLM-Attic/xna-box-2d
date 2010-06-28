@@ -46,6 +46,12 @@ namespace Box2D.XNA
             return shape;
         }
 
+        /// @see b2Shape::GetChildCount
+        public override int GetChildCount()
+        {
+            return 1;
+        }
+
         /// @see Shape.TestPoint
         public override bool TestPoint(ref Transform transform, Vector2 p)
         {
@@ -58,7 +64,7 @@ namespace Box2D.XNA
         // From Section 3.1.2
         // x = s + a * r
         // norm(x) = radius
-        public override bool RayCast(out RayCastOutput output, ref RayCastInput input, ref Transform transform)
+        public override bool RayCast(out RayCastOutput output, ref RayCastInput input, ref Transform transform, int childIndex)
         {
             output = new RayCastOutput();
 
@@ -96,7 +102,7 @@ namespace Box2D.XNA
         }
 
         /// @see Shape.ComputeAABB
-        public override void ComputeAABB(out AABB aabb, ref Transform transform)
+        public override void ComputeAABB(out AABB aabb, ref Transform transform, int childIndex)
         {
             Vector2 p = transform.Position + MathUtils.Multiply(ref transform.R, _p);
 	        aabb.lowerBound = new Vector2(p.X - _radius, p.Y - _radius);
@@ -113,23 +119,11 @@ namespace Box2D.XNA
 	        massData.I = massData.mass * (0.5f * _radius * _radius + Vector2.Dot(_p, _p));
         }
 
-        /// Get the supporting vertex index in the given direction.
-        public override int GetSupport(Vector2 d)
-        {
-            return 0;
-        }
-
-        /// Get the supporting vertex in the given direction.
-        public override Vector2 GetSupportVertex(Vector2 d)
-        {
-            return _p;
-        }
-
         /// Get the vertex count.
-        public override int GetVertexCount() { return 1; }
+        public int GetVertexCount() { return 1; }
 
         /// Get a vertex by index. Used by b2Distance.
-        public override Vector2 GetVertex(int index)
+        public Vector2 GetVertex(int index)
         {
             Debug.Assert(index == 0);
             return _p;

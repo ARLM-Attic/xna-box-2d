@@ -30,13 +30,8 @@ namespace Box2D.XNA.TestBed.Tests
     {
         TimeOfImpact()
 	    {
-		    {
-                _shapeA.SetAsBox(0.2f, 1.0f, new Vector2(0.5f, 1.0f), 0.0f);
-		    }
-
-		    {
-			    _shapeB.SetAsBox(2.0f, 0.1f);
-		    }
+            _shapeA.SetAsBox(25.0f, 5.0f);
+            _shapeB.SetAsBox(2.5f, 2.5f);
 	    }
 
 	    internal static Test Create()
@@ -49,22 +44,22 @@ namespace Box2D.XNA.TestBed.Tests
 		    base.Step(settings);
 
 		    Sweep sweepA = new Sweep();
-		    sweepA.c0 = Vector2.Zero;
-		    sweepA.a0 = 0.0f;
+		    sweepA.c0 = new Vector2(24.0f, -60.0f);
+		    sweepA.a0 = 2.95f;
 		    sweepA.c = sweepA.c0;
 		    sweepA.a = sweepA.a0;
 		    sweepA.localCenter = Vector2.Zero;
 
 		    Sweep sweepB = new Sweep();
-            sweepB.c0 = new Vector2(-0.20382018f, 2.1368704f);
-            sweepB.a0 = -3.1664171f;
-            sweepB.c = new Vector2(-0.26699525f, 2.3552670f);
-            sweepB.a = -3.3926492f;
+            sweepB.c0 = new Vector2(53.474274f, -50.252514f);
+            sweepB.a0 = 513.36676f;
+            sweepB.c = new Vector2(54.595478f, -51.083473f);
+            sweepB.a = 513.62781f;
 		    sweepB.localCenter = Vector2.Zero;
 
 		    TOIInput input = new TOIInput();
-            input.proxyA.Set(_shapeA);
-            input.proxyB.Set(_shapeB);
+            input.proxyA.Set(_shapeA, 0);
+            input.proxyB.Set(_shapeB, 0);
 		    input.sweepA = sweepA;
 		    input.sweepB = sweepB;
             input.tMax = 1.0f;

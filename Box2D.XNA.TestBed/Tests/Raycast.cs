@@ -156,6 +156,8 @@ namespace Box2D.XNA.TestBed.Tests
 
         public override void Step(Framework.Settings settings)
 	    {
+            bool advanceRay = settings.pause == 0 || settings.singleStep != 0;
+
 		    base.Step(settings);
 		    _debugDraw.DrawString(5, _textLine, "Press 1-5 to drop stuff, m to change the mode");
 		    _textLine += 15;
@@ -279,7 +281,10 @@ namespace Box2D.XNA.TestBed.Tests
                     break;
             }
 
-		    _angle += 0.25f * Settings.b2_pi / 180.0f;
+            if (advanceRay)
+            {
+                _angle += 0.25f * (float)Math.PI / 180.0f;
+            }
 	    }
 
         private void Create(int index)
@@ -295,7 +300,7 @@ namespace Box2D.XNA.TestBed.Tests
 		    float x = Rand.RandomFloat(-10.0f, 10.0f);
             float y = Rand.RandomFloat(0.0f, 20.0f);
 		    bd.position = new Vector2(x, y);
-            bd.angle = Rand.RandomFloat(-Settings.b2_pi, Settings.b2_pi);
+            bd.angle = Rand.RandomFloat(-(float)Math.PI, (float)Math.PI);
 
             bd.userData = index;
 

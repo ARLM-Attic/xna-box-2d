@@ -70,7 +70,7 @@ namespace Box2D.XNA.TestBed.Tests
                 _radius = 0.5f;
                 CircleShape shape = new CircleShape();
                 shape._radius = _radius;
-                _character = body.CreateFixture(shape, 1.0f);
+                _character = body.CreateFixture(shape, 20.0f);
 
                 body.SetLinearVelocity(new Vector2(0.0f, -50.0f));
 
@@ -97,7 +97,7 @@ namespace Box2D.XNA.TestBed.Tests
 
 		    Vector2 position = _character.GetBody().GetPosition();
 
-		    if (position.Y < _top)
+            if (position.Y < _top + _radius - 3.0f * Settings.b2_linearSlop)
 		    {
 			    contact.SetEnabled(false);
 		    }

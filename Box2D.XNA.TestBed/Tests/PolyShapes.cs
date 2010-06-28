@@ -79,8 +79,10 @@ namespace Box2D.XNA.TestBed.Tests
 
         /// Called for each fixture found in the query AABB.
         /// @return false to terminate the query.
-        public bool ReportFixture(Fixture fixture)
+        public bool ReportFixture(FixtureProxy fixtureProxy)
         {
+            var fixture = fixtureProxy.fixture;
+
             if (_count == e_maxCount)
             {
                 return false;
@@ -92,7 +94,7 @@ namespace Box2D.XNA.TestBed.Tests
             Transform xf;
             body.GetTransform(out xf);
 
-            bool overlap = AABB.TestOverlap(shape, _circle, ref xf, ref _transform);
+            bool overlap = AABB.TestOverlap(shape, 0, _circle, 0, ref xf, ref _transform);
 
             if (overlap)
             {
@@ -281,7 +283,7 @@ namespace Box2D.XNA.TestBed.Tests
 		    callback._debugDraw = _debugDraw;
             
 		    AABB aabb;
-		    callback._circle.ComputeAABB(out aabb, ref callback._transform);
+		    callback._circle.ComputeAABB(out aabb, ref callback._transform, 0);
 
 		    _world.QueryAABB(callback.ReportFixture, ref aabb);
 

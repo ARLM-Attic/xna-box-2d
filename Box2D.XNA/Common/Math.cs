@@ -71,6 +71,21 @@ namespace Box2D.XNA
             return MultiplyT(ref T.R, v - T.Position);
         }
 
+        // A^T * B
+        public static void MultiplyT(ref Mat22 A, ref Mat22 B, out Mat22 C)
+        {
+            Vector2 c1 = new Vector2(Vector2.Dot(A.col1, B.col1), Vector2.Dot(A.col2, B.col1));
+            Vector2 c2 = new Vector2(Vector2.Dot(A.col1, B.col2), Vector2.Dot(A.col2, B.col2));
+	        C = new Mat22(c1, c2);
+        }
+
+        public static void MultiplyT(ref Transform A, ref Transform B, out Transform C)
+        {
+            Mat22 R; 
+            MultiplyT(ref A.R, ref B.R, out R);
+            C = new Transform(B.Position - A.Position, ref R);
+        }
+
         public static void Swap<T>(ref T a, ref T b)
         {
             T tmp = a;
@@ -346,6 +361,15 @@ namespace Box2D.XNA
         {
             c0 = (1.0f - t) * c0 + t * c;
             a0 = (1.0f - t) * a0 + t * a;
+        }
+
+        /// Normalize the angles.
+        public void Normalize()
+        {
+            float twoPi = 2.0f * (float)Math.PI;
+            float d = twoPi * (float)Math.Floor(a0 / twoPi);
+            a0 -= d;
+            a -= d;
         }
 
         public Vector2 localCenter;	///< local center of mass position

@@ -33,7 +33,7 @@ namespace Box2D.XNA
         public UInt16 categoryBits;
 
         /// The collision mask bits. This states the categories that this
-        /// shape would accept for collision.
+        /// Shape would accept for collision.
         public UInt16 maskBits;
 
         /// Collision groups allow a certain group of objects to never collide (negative)
@@ -60,8 +60,8 @@ namespace Box2D.XNA
 		    isSensor = false;
 	    }
 
-	    /// The shape, this must be set. The shape will be cloned, so you
-	    /// can create the shape on the stack.
+	    /// The Shape, this must be set. The Shape will be cloned, so you
+	    /// can create the Shape on the stack.
         public Shape shape;
 
 	    /// Use this to store application specific fixture data.
@@ -76,7 +76,7 @@ namespace Box2D.XNA
 	    /// The density, usually in kg/m^2.
         public float density;
 
-	    /// A sensor shape collects contact information but never generates a collision
+	    /// A sensor Shape collects contact information but never generates a collision
 	    /// response.
         public bool isSensor;
 
@@ -85,21 +85,30 @@ namespace Box2D.XNA
     };
 
 
-    /// A fixture is used to attach a shape to a body for collision detection. A fixture
+    /// This proxy is used internally to connect fixtures to the broad-phase.
+    public class FixtureProxy
+    {
+        public AABB aabb;
+        public Fixture fixture;
+        public int childIndex;
+        public int proxyId;
+    };
+
+    /// A fixture is used to attach a Shape to a body for collision detection. A fixture
     /// inherits its transform from its parent. Fixtures hold additional non-geometric data
     /// such as friction, collision filters, etc.
     /// Fixtures are created via Body.CreateFixture.
     /// @warning you cannot reuse fixtures.
     public class Fixture
     {
-	    /// Get the type of the child shape. You can use this to down cast to the concrete shape.
-	    /// @return the shape type.
+	    /// Get the type of the child Shape. You can use this to down cast to the concrete Shape.
+	    /// @return the Shape type.
 	    public ShapeType ShapeType
         {
             get { return _shape.ShapeType; }
         }
 
-	    /// Get the child shape. You can modify the child shape, however you should not change the
+	    /// Get the child Shape. You can modify the child Shape, however you should not change the
 	    /// number of vertices because this will crash some collision caching mechanisms.
 	    public Shape GetShape()
         {
@@ -107,7 +116,7 @@ namespace Box2D.XNA
         }
 
 	    /// Is this fixture a sensor (non-solid)?
-	    /// @return the true if the shape is a sensor.
+	    /// @return the true if the Shape is a sensor.
 	    public bool IsSensor()
         {
             return _isSensor;
@@ -160,7 +169,7 @@ namespace Box2D.XNA
         }
 
 	    /// Get the next fixture in the parent body's fixture list.
-	    /// @return the next shape.
+	    /// @return the next Shape.
 	    public Fixture GetNext()
         {
             return _next;
@@ -192,7 +201,7 @@ namespace Box2D.XNA
 
 
 	    /// Test a point for containment in this fixture.
-	    /// @param xf the shape world transform.
+	    /// @param xf the Shape world transform.
 	    /// @param p a point in world coordinates.
 	    public bool TestPoint(Vector2 p)
         {
@@ -201,18 +210,18 @@ namespace Box2D.XNA
             return _shape.TestPoint(ref xf, p);
         }
 
-        /// Cast a ray against this shape.
+        /// Cast a ray against this Shape.
 	    /// @param output the ray-cast results.
 	    /// @param input the ray-cast input parameters.
-	    public bool RayCast(out RayCastOutput output, ref RayCastInput input)
+        public bool RayCast(out RayCastOutput output, ref RayCastInput input, int childIndex)
         {
             Transform xf;
             _body.GetTransform(out xf);
-            return _shape.RayCast(out output, ref input, ref xf);
+            return _shape.RayCast(out output, ref input, ref xf, childIndex);
         }
 
 	    /// Get the mass data for this fixture. The mass data is based on the density and
-	    /// the shape. The rotational inertia is about the shape's origin.
+	    /// the Shape. The rotational inertia is about the Shape's origin.
 	    public void GetMassData(out MassData massData)
         {
             _shape.ComputeMass(out massData, _density);
@@ -244,11 +253,12 @@ namespace Box2D.XNA
         }
 
         /// Get the fixture's AABB. This AABB may be enlarge and/or stale.
-	    /// If you need a more accurate AABB, compute it using the shape and
+	    /// If you need a more accurate AABB, compute it using the Shape and
 	    /// the body transform.
-	    public void GetAABB(out AABB aabb)
+	    public void GetAABB(out AABB aabb, int childIndex)
         {
-            aabb = _aabb;
+            Debug.Assert(0 <= childIndex && childIndex < _proxyCount);
+            aabb = _proxies[childIndex].aabb;
         }
 
 	    internal Fixture()
@@ -277,61 +287,93 @@ namespace Box2D.XNA
 
 	        _shape = def.shape.Clone();
 
+            // Reserve proxy space
+	        int childCount = _shape.GetChildCount();
+	        _proxies = new FixtureProxy[childCount];
+	        for (int i = 0; i < childCount; ++i)
+	        {
+                _proxies[i] = new FixtureProxy();
+		        _proxies[i].fixture = null;
+		        _proxies[i].proxyId = BroadPhase.NullProxy;
+	        }
+	        _proxyCount = 0;
+
             _density = def.density;
         }
 
 	    internal void Destroy()
         {
-            // The proxy must be destroyed before calling this.
-	        Debug.Assert(_proxyId == BroadPhase.NullProxy);
+            // The proxies must be destroyed before calling this.
+            Debug.Assert(_proxyCount == 0);
+
+            // Free the proxy array.
+            _proxies = null;
 
             _shape = null;
         }
 
         // These support body activation/deactivation.
-	    internal void CreateProxy(BroadPhase broadPhase, ref Transform xf)
+	    internal void CreateProxies(BroadPhase broadPhase, ref Transform xf)
         {
-        	Debug.Assert(_proxyId == BroadPhase.NullProxy);
+            Debug.Assert(_proxyCount == 0);
 
-	        // Create proxy in the broad-phase.
-	        _shape.ComputeAABB(out _aabb, ref xf);
-	        _proxyId = broadPhase.CreateProxy(ref _aabb, this);
+            // Create proxies in the broad-phase.
+            _proxyCount = _shape.GetChildCount();
+
+            for (int i = 0; i < _proxyCount; ++i)
+            {
+                FixtureProxy proxy = _proxies[i];
+                _shape.ComputeAABB(out proxy.aabb, ref xf, i);
+                proxy.fixture = this;
+                proxy.childIndex = i;
+                proxy.proxyId = broadPhase.CreateProxy(ref proxy.aabb, proxy);
+
+                _proxies[i] = proxy;
+            }
         }
 
-	    internal void DestroyProxy(BroadPhase broadPhase)
+        internal void DestroyProxies(BroadPhase broadPhase)
         {
-    	    if (_proxyId == BroadPhase.NullProxy)
+	        // Destroy proxies in the broad-phase.
+	        for (int i = 0; i < _proxyCount; ++i)
 	        {
-		        return;
+                broadPhase.DestroyProxy(_proxies[i].proxyId);
+		        _proxies[i].proxyId = BroadPhase.NullProxy;
 	        }
 
-	        // Destroy proxy in the broad-phase.
-	        broadPhase.DestroyProxy(_proxyId);
-	        _proxyId = BroadPhase.NullProxy;
+	        _proxyCount = 0;
         }
 
 
         internal void Synchronize(BroadPhase broadPhase, ref Transform transform1, ref Transform transform2)
         {
-            if (_proxyId == BroadPhase.NullProxy)
-	        {	
-		        return;
-	        }
+            if (_proxyCount == 0)
+            {
+                return;
+            }
 
-	        // Compute an AABB that covers the swept shape (may miss some rotation effect).
-	        AABB aabb1, aabb2;
-	        _shape.ComputeAABB(out aabb1, ref transform1);
-	        _shape.ComputeAABB(out aabb2, ref transform2);
-        	
-	        _aabb.Combine(ref aabb1, ref aabb2);
+            for (int i = 0; i < _proxyCount; ++i)
+            {
+                FixtureProxy proxy = _proxies[i];
 
-            Vector2 displacement = transform2.Position - transform1.Position;
+                // Compute an AABB that covers the swept Shape (may miss some rotation effect).
+                AABB aabb1, aabb2;
+                _shape.ComputeAABB(out aabb1, ref transform1, proxy.childIndex);
+                _shape.ComputeAABB(out aabb2, ref transform2, proxy.childIndex);
 
-            broadPhase.MoveProxy(_proxyId, ref _aabb, displacement);
+                proxy.aabb.Combine(ref aabb1, ref aabb2);
+
+                Vector2 displacement = transform2.Position - transform1.Position;
+
+                broadPhase.MoveProxy(proxy.proxyId, ref proxy.aabb, displacement);
+            }
 
         }
 
         internal AABB _aabb;
+
+        internal FixtureProxy[] _proxies;
+        internal int _proxyCount;
 
         internal float _density;
 

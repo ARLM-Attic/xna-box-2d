@@ -84,7 +84,7 @@ namespace Box2D.XNA.TestBed.Tests
 
         void CreateCircle()
         {
-            float radius = 0.5f;
+            float radius = 2.0f;
             CircleShape shape = new CircleShape();
             shape._p = Vector2.Zero;
             shape._radius = radius;
@@ -96,7 +96,7 @@ namespace Box2D.XNA.TestBed.Tests
 
             BodyDef bd = new BodyDef();
             bd.type = BodyType.Dynamic;
-            bd.position = new Vector2(Rand.RandomFloat(), (2.0f + Rand.RandomFloat()) * radius);
+            bd.position = new Vector2(Rand.RandomFloat(), (3.0f + Rand.RandomFloat()));
             Body body = _world.CreateBody(bd);
 
             body.CreateFixture(fd);
@@ -112,14 +112,48 @@ namespace Box2D.XNA.TestBed.Tests
 
         public override void Step(Framework.Settings settings)
 	    {
-            uint oldFlag = settings.enableContinuous;
+            bool sleeping = true;
+		    for (Body b = _world.GetBodyList(); b != null; b = b.GetNext())
+		    {
+			    if (b.GetType() != BodyType.Dynamic)
+			    {
+				    continue;
+			    }
 
-            settings.enableContinuous = 0;
+			    if (b.IsAwake())
+			    {
+				    sleeping = false;
+			    }
+		    }
+
+		    if (_stepCount == 180)
+		    {
+			    _stepCount += 0;
+		    }
+
+		    //if (sleeping)
+		    //{
+		    //	CreateCircle();
+		    //}
+
 		    base.Step(settings);
+
+		    for (Body b = _world.GetBodyList(); b != null; b = b.GetNext())
+		    {
+			    if (b.GetType() != BodyType.Dynamic)
+			    {
+				    continue;
+			    }
+
+			    Vector2 p = b.GetPosition();
+			    if (p.X <= -10.0f || 10.0f <= p.X || p.Y <= 0.0f || 20.0f <= p.Y)
+			    {
+				    p.X += 0.0f;
+			    }
+		    }
+
 		    _debugDraw.DrawString(5, _textLine, "Press 'c' to create a circle.");
 		    _textLine += 15;
-
-            settings.enableContinuous = oldFlag;
 	    }
 
 	    static internal Test Create()
