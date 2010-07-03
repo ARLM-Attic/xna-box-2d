@@ -98,6 +98,8 @@
     </Compile>
     <Compile Include="Tests\BodyTypes.cs" />
     <Compile Include="Tests\Cantilever.cs" />
+    <Compile Include="Tests\CharacterCollision.cs" />
+    <Compile Include="Tests\Edge.cs" />
     <Compile Include="Tests\EdgeShapes.cs" />
     <Compile Include="Tests\Raycast.cs" />
     <Compile Include="Tests\OneSidedPlatform.cs" />
@@ -148,6 +150,7 @@
     <Compile Include="Tests\TheoJansen.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Tests\Tiles.cs" />
     <Compile Include="Tests\TimeOfImpact.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -306,8 +306,8 @@ namespace Box2D.XNA
                     break;
                 case ContactType.EdgeAndPolygon:
                     Collision.CollideEdgeAndPolygon(ref manifold,
-                            (EdgeShape)   _fixtureA.GetShape(), ref xfA,
-                            (PolygonShape)_fixtureB.GetShape(), ref xfB);
+                            (EdgeShape)   _fixtureB.GetShape(), ref xfB,
+                            (PolygonShape)_fixtureA.GetShape(), ref xfA);
                     break;
                 case ContactType.LoopAndCircle:
                     var loop = (LoopShape)_fixtureA.GetShape();

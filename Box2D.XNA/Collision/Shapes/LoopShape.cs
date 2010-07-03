@@ -42,7 +42,11 @@ namespace Box2D.XNA
 	    /// Implement Shape.
 	    public override Shape Clone()
         {
-            return new LoopShape();
+            var loop = new LoopShape();
+            loop._count = _count;
+            loop._radius = _radius;
+            loop._vertices = (Vector2[])_vertices.Clone();
+            return loop;
         }
 
 	    /// @see Shape::GetChildCount

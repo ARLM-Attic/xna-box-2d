@@ -39,6 +39,7 @@ namespace Box2D.XNA.TestBed
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             graphics.PreferMultiSampling = true;
+            this.IsMouseVisible = true;
         }
 
         /// <summary>
@@ -114,6 +115,9 @@ namespace Box2D.XNA.TestBed
 
             KeyboardState newState = Keyboard.GetState();
             GamePadState newGamePad = GamePad.GetState(PlayerIndex.One);
+            MouseState newMouse = Mouse.GetState();
+
+            HandleMouse(ref newMouse, ref oldMouse, newState.IsKeyDown(Keys.LeftShift));
 
             // Press 'z' to zoom out.
 	        if (newState.IsKeyDown(Keys.Z) && oldState.IsKeyUp(Keys.Z))
@@ -209,6 +213,7 @@ namespace Box2D.XNA.TestBed
 
             oldState = newState;
             oldGamePad = newGamePad;
+            oldMouse = newMouse;
 
             et.EndTrace(TraceEvents.UpdateEventId);
         }
@@ -269,8 +274,8 @@ namespace Box2D.XNA.TestBed
 	        width = w;
 	        height = h;
 
-	        int tw = GraphicsDevice.Viewport.Width;
-            int th = GraphicsDevice.Viewport.Height;
+	        tw = GraphicsDevice.Viewport.Width;
+            th = GraphicsDevice.Viewport.Height;
             int x = GraphicsDevice.Viewport.X;
             int y = GraphicsDevice.Viewport.Y;
 
@@ -304,78 +309,60 @@ namespace Box2D.XNA.TestBed
 	        return p;
         }
 
-        /*
-        void Mouse(int button, int state, int x, int y)
+        void HandleMouse(ref MouseState state, ref MouseState oldState, bool shift)
         {
-	        // Use the mouse to move things around.
-	        if (button == GLUT_LEFT_BUTTON)
-	        {
-		        int mod = glutGetModifiers();
-		        Vector2 p = ConvertScreenToWorld(x, y);
-		        if (state == GLUT_DOWN)
-		        {
-			        Vector2 p = ConvertScreenToWorld(x, y);
-			        if (mod == GLUT_ACTIVE_SHIFT)
-			        {
-				        test.ShiftMouseDown(p);
-			        }
-			        else
-			        {
-				        test.MouseDown(p);
-			        }
-		        }
-        		
-		        if (state == GLUT_UP)
-		        {
-			        test.MouseUp(p);
-		        }
-	        }
-	        else if (button == GLUT_RIGHT_BUTTON)
-	        {
-		        if (state == GLUT_DOWN)
-		        {	
-			        lastp = ConvertScreenToWorld(x, y);
-			        rMouseDown = true;
-		        }
+		    Vector2 p = ConvertScreenToWorld(state.X, state.Y);
+            Vector2 oldp = ConvertScreenToWorld(oldState.X, oldState.Y);
 
-		        if (state == GLUT_UP)
-		        {
-			        rMouseDown = false;
-		        }
-	        }
-        }
+            if (state.LeftButton == ButtonState.Pressed && oldState.LeftButton == ButtonState.Released)
+            {
+                if (shift)
+                    test.ShiftMouseDown(p);
+                else
+                    test.MouseDown(p);
+            }
 
-        void MouseMotion(int x, int y)
-        {
-	        Vector2 p = ConvertScreenToWorld(x, y);
-	        test.MouseMove(p);
-        	
-	        if (rMouseDown)
+            if (p != oldp)
+                test.MouseMove(p);
+            
+            if (state.LeftButton == ButtonState.Released && oldState.LeftButton == ButtonState.Pressed)
+            {
+                test.MouseUp(p);
+            }
+
+            if (state.RightButton == ButtonState.Pressed && oldState.RightButton == ButtonState.Released)
+            {
+                lastp = p;
+                rMouseDown = true;
+            }
+            else if (state.RightButton == ButtonState.Released && oldState.RightButton == ButtonState.Pressed)
+            {
+                rMouseDown = false;
+            }
+
+            if (rMouseDown)
 	        {
 		        Vector2 diff = p - lastp;
-		        viewCenter.x -= diff.x;
-		        viewCenter.y -= diff.y;
+		        viewCenter.X -= diff.X;
+		        viewCenter.Y -= diff.Y;
 		        Resize(width, height);
-		        lastp = ConvertScreenToWorld(x, y);
 	        }
-        }
+            else if (state.ScrollWheelValue != oldState.ScrollWheelValue)
+            {
+                var direction = state.ScrollWheelValue - oldState.ScrollWheelValue;
+	            if (direction > 0)
+	            {
+		            viewZoom /= 1.1f;
+	            }
+	            else
+	            {
+		            viewZoom *= 1.1f;
+	            }
+	            Resize(width, height);
+            }
 
-        void MouseWheel(int wheel, int direction, int x, int y)
-        {
-	        B2_NOT_USED(wheel);
-	        B2_NOT_USED(x);
-	        B2_NOT_USED(y);
-	        if (direction > 0)
-	        {
-		        viewZoom /= 1.1f;
-	        }
-	        else
-	        {
-		        viewZoom *= 1.1f;
-	        }
-	        Resize(width, height);
+            lastp = ConvertScreenToWorld(state.X, state.Y);
         }
-        */
 
         void Restart()
         {
@@ -417,6 +404,7 @@ namespace Box2D.XNA.TestBed
         SpriteFont spriteFont;                
         KeyboardState oldState;
         GamePadState oldGamePad;
+        MouseState oldMouse;
         IEventTrace et;
     }
 }

@@ -24,7 +24,7 @@ using System;
 
 namespace Box2D.XNA
 {
-    internal class ContactManager
+    public class ContactManager
     {
         internal ContactManager()
         {

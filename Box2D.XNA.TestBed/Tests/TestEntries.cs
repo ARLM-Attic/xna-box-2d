@@ -28,6 +28,9 @@ namespace Box2D.XNA.TestBed.Tests
     {
         public static TestEntry[] g_testEntries =
         {
+            new TestEntry() { name="CharacterCollision", createFcn=CharacterCollision.Create},
+            new TestEntry() { name="Edge", createFcn=EdgeTest.Create},
+            new TestEntry() { name="Tiles", createFcn=Tiles.Create},
             new TestEntry() { name="Continuous Test", createFcn=ContinuousTest.Create},
             new TestEntry() { name="Dominos", createFcn=Dominos.Create},
             new TestEntry() { name="Edge Shapes", createFcn=EdgeShapes.Create},

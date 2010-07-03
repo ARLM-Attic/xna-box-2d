@@ -20,106 +20,108 @@
 * 3. This notice may not be removed or altered from any source distribution. 
 */
 
-#ifndef EDGE_TEST_H
-#define EDGE_TEST_H
+using Box2D.XNA.TestBed.Framework;
+using Microsoft.Xna.Framework;
+using Box2D.XNA;
 
-class EdgeTest : public Test
+public class EdgeTest : Test
 {
-public:
-
-	EdgeTest()
+	public EdgeTest()
 	{
 		{
-			b2BodyDef bd;
-			b2Body* ground = m_world->CreateBody(&bd);
+			BodyDef bd = new BodyDef();
+			Body ground = _world.CreateBody(bd);
 
-			b2Vec2 v1(-10.0f, 0.0f), v2(-7.0f, -1.0f), v3(-4.0f, 0.0f);
-			b2Vec2 v4(0.0f, 0.0f), v5(4.0f, 0.0f), v6(7.0f, 1.0f), v7(10.0f, 0.0f);
+			Vector2 v1 = new Vector2(-10.0f, 0.0f);
+            Vector2 v2 = new Vector2(-7.0f, -1.0f); 
+            Vector2 v3 = new Vector2(-4.0f, 0.0f);
+			Vector2 v4 = new Vector2(0.0f, 0.0f);
+            Vector2 v5 = new Vector2(4.0f, 0.0f);
+            Vector2 v6 = new Vector2(7.0f, 1.0f);
+            Vector2 v7 = new Vector2(10.0f, 0.0f);
 
-			b2EdgeShape shape;
+            EdgeShape shape = new EdgeShape();
 
 			shape.Set(v1, v2);
-			//shape.m_index1 = 0;
-			//shape.m_index2 = 1;
-			shape.m_hasVertex3 = true;
-			shape.m_vertex3 = v3;
-			ground->CreateFixture(&shape, 0.0f);
+			//shape._index1 = 0;
+			//shape._index2 = 1;
+			shape._hasVertex3 = true;
+			shape._vertex3 = v3;
+			ground.CreateFixture(shape, 0.0f);
 
 			shape.Set(v2, v3);
-			//shape.m_index1 = 1;
-			//shape.m_index2 = 2;
-			shape.m_hasVertex0 = true;
-			shape.m_hasVertex3 = true;
-			shape.m_vertex0 = v1;
-			shape.m_vertex3 = v4;
-			ground->CreateFixture(&shape, 0.0f);
+			//shape._index1 = 1;
+			//shape._index2 = 2;
+			shape._hasVertex0 = true;
+			shape._hasVertex3 = true;
+			shape._vertex0 = v1;
+			shape._vertex3 = v4;
+			ground.CreateFixture(shape, 0.0f);
 
 			shape.Set(v3, v4);
-			//shape.m_index1 = 2;
-			//shape.m_index2 = 3;
-			shape.m_hasVertex0 = true;
-			shape.m_hasVertex3 = true;
-			shape.m_vertex0 = v2;
-			shape.m_vertex3 = v5;
-			ground->CreateFixture(&shape, 0.0f);
+			//shape._index1 = 2;
+			//shape._index2 = 3;
+			shape._hasVertex0 = true;
+			shape._hasVertex3 = true;
+			shape._vertex0 = v2;
+			shape._vertex3 = v5;
+			ground.CreateFixture(shape, 0.0f);
 
 			shape.Set(v4, v5);
-			//shape.m_index1 = 3;
-			//shape.m_index2 = 4;
-			shape.m_hasVertex0 = true;
-			shape.m_hasVertex3 = true;
-			shape.m_vertex0 = v3;
-			shape.m_vertex3 = v6;
-			ground->CreateFixture(&shape, 0.0f);
+			//shape._index1 = 3;
+			//shape._index2 = 4;
+			shape._hasVertex0 = true;
+			shape._hasVertex3 = true;
+			shape._vertex0 = v3;
+			shape._vertex3 = v6;
+			ground.CreateFixture(shape, 0.0f);
 
 			shape.Set(v5, v6);
-			//shape.m_index1 = 4;
-			//shape.m_index2 = 5;
-			shape.m_hasVertex0 = true;
-			shape.m_hasVertex3 = true;
-			shape.m_vertex0 = v4;
-			shape.m_vertex3 = v7;
-			ground->CreateFixture(&shape, 0.0f);
+			//shape._index1 = 4;
+			//shape._index2 = 5;
+			shape._hasVertex0 = true;
+			shape._hasVertex3 = true;
+			shape._vertex0 = v4;
+			shape._vertex3 = v7;
+			ground.CreateFixture(shape, 0.0f);
 
 			shape.Set(v6, v7);
-			//shape.m_index1 = 5;
-			//shape.m_index2 = 6;
-			shape.m_hasVertex0 = true;
-			shape.m_vertex0 = v5;
-			ground->CreateFixture(&shape, 0.0f);
+			//shape._index1 = 5;
+			//shape._index2 = 6;
+			shape._hasVertex0 = true;
+			shape._vertex0 = v5;
+			ground.CreateFixture(shape, 0.0f);
 		}
 
 		{
-			b2BodyDef bd;
-			bd.type = b2_dynamicBody;
-			bd.position.Set(-0.5f, 0.5f);
+			BodyDef bd = new BodyDef();
+			bd.type = BodyType.Dynamic;
+			bd.position = new Vector2(-0.5f, 0.5f);
 			bd.allowSleep = false;
-			b2Body* body = m_world->CreateBody(&bd);
+			Body body = _world.CreateBody(bd);
 
-			b2CircleShape shape;
-			shape.m_radius = 0.5f;
+			CircleShape shape = new CircleShape();
+			shape._radius = 0.5f;
 
-			body->CreateFixture(&shape, 1.0f);
+			body.CreateFixture(shape, 1.0f);
 		}
 
 		{
-			b2BodyDef bd;
-			bd.type = b2_dynamicBody;
-			bd.position.Set(0.5f, 0.5f);
+			BodyDef bd = new BodyDef();
+			bd.type = BodyType.Dynamic;
+			bd.position = new Vector2(0.5f, 0.5f);
 			bd.allowSleep = false;
-			b2Body* body = m_world->CreateBody(&bd);
+			Body body = _world.CreateBody(bd);
 
-			b2PolygonShape shape;
+			PolygonShape shape = new PolygonShape();
 			shape.SetAsBox(0.5f, 0.5f);
 
-			body->CreateFixture(&shape, 1.0f);
+			body.CreateFixture(shape, 1.0f);
 		}
 	}
 
-	static Test* Create()
+	static internal Test Create()
 	{
-		return new EdgeTest;
+		return new EdgeTest();
 	}
 };
-
-#endif

@@ -456,7 +456,7 @@ namespace Box2D.XNA
         }
 
         /// Get the contact manager for testing.
-        ContactManager GetContactManager()
+        public ContactManager GetContactManager()
         {
             return _contactManager;
         }

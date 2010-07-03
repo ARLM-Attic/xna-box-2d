@@ -49,7 +49,15 @@ namespace Box2D.XNA
 	    /// Implement Shape.
         public override Shape Clone()
         {
-	        return new EdgeShape();
+	        var edge = new EdgeShape();
+            edge._hasVertex0 = _hasVertex0;
+            edge._hasVertex3 = _hasVertex3;
+            edge._radius = _radius;
+            edge._vertex0 = _vertex0;
+            edge._vertex1 = _vertex1;
+            edge._vertex2 = _vertex2;
+            edge._vertex3 = _vertex3;
+            return edge;
         }
 
 	    /// @see Shape::GetChildCount
