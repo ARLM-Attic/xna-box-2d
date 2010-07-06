@@ -306,8 +306,8 @@ namespace Box2D.XNA
                     break;
                 case ContactType.EdgeAndPolygon:
                     Collision.CollideEdgeAndPolygon(ref manifold,
-                            (EdgeShape)   _fixtureB.GetShape(), ref xfB,
-                            (PolygonShape)_fixtureA.GetShape(), ref xfA);
+                            (EdgeShape)   _fixtureA.GetShape(), ref xfA,
+                            (PolygonShape)_fixtureB.GetShape(), ref xfB);
                     break;
                 case ContactType.LoopAndCircle:
                     var loop = (LoopShape)_fixtureA.GetShape();
@@ -391,7 +391,9 @@ namespace Box2D.XNA
             if (pool.Count > 0)
             {
                 c = pool.Dequeue();
-                if (type1 >= type2)
+                if ((type1 >= type2 || (type1 == ShapeType.Edge && type2 == ShapeType.Polygon))
+                    &&
+                    !(type2 == ShapeType.Edge && type1 == ShapeType.Polygon))
                 {
                     c.Reset(fixtureA, indexA, fixtureB, indexB);
                 }
@@ -402,7 +404,10 @@ namespace Box2D.XNA
             }
             else
             {
-                if (type1 >= type2)
+                // Edge+Polygon is non-symetrical due to the way Erin handles collision type registration.
+                if ((type1 >= type2 || (type1 == ShapeType.Edge && type2 == ShapeType.Polygon))
+                    && 
+                    !(type2 == ShapeType.Edge && type1 == ShapeType.Polygon))
                 {
                     c = new Contact(fixtureA, indexA, fixtureB, indexB);
                 }

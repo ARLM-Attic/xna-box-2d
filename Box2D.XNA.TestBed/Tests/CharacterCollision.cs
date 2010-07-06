@@ -70,9 +70,11 @@ public class CharacterCollision : Test
 		// Square made from edges notice how the edges are shrunk to account
 		// for the polygon radius. This makes it so the square character does
 		// not get snagged. However, ray casts can now go through the cracks.
+        for (int i = 0; i < 4; i++)
 		{
 			BodyDef bd = new BodyDef();
 			Body ground = _world.CreateBody(bd);
+            ground.SetTransform(new Vector2(-2f * i, 0), 0);
 
 			Vector2[] vs = new Vector2[4];
             vs[0] = new Vector2(-1.0f, 3.0f);

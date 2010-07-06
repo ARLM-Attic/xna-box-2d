@@ -71,7 +71,6 @@ namespace Box2D.XNA
         public float NormalImpulse;	///< the non-penetration impulse
         public float TangentImpulse;	///< the friction impulse
         public ContactID Id;			///< uniquely identifies a contact point between two Shapes
-        public bool isNew;
     };
 
     public enum ManifoldType
@@ -936,7 +935,6 @@ namespace Box2D.XNA
         static void FindIncidentEdge(ref FixedArray2<ClipVertex> c, PolygonShape poly1, int edge1, PolygonShape poly2)
         {
 	        int count1 = poly1._vertexCount;
-
 	        int count2 = poly2._vertexCount;
 
 	        Debug.Assert(0 <= edge1 && edge1 < count1);
@@ -1146,7 +1144,6 @@ namespace Box2D.XNA
 
 	        PolygonShape poly1;
 	        PolygonShape poly2;
-            FixedArray2<ClipVertex> incidentEdge = new FixedArray2<ClipVertex>();
 	        if (primaryAxis.type == EPAxisType.EdgeA)
 	        {
                 poly1 = s_polygonA;
@@ -1166,6 +1163,7 @@ namespace Box2D.XNA
 
 	        int edge1 = primaryAxis.index;
 
+            FixedArray2<ClipVertex> incidentEdge = new FixedArray2<ClipVertex>();
 	        FindIncidentEdge(ref incidentEdge, poly1, primaryAxis.index, poly2);
 	        int count1 = poly1._vertexCount;
 	        int iv1 = edge1;
