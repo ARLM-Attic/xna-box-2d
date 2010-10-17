@@ -27,7 +27,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Box2D.XNA.TestBed.Framework
 {
-    public class DebugDraw : XNA.DebugDraw
+    public class DebugDraw : Box2D.XNA.DebugDraw
     {
         public DebugDraw()
         {
@@ -65,7 +65,7 @@ namespace Box2D.XNA.TestBed.Framework
                 return;
             }
 
-            Color colorFill = new Color(color, outline ? 0.5f : 1.0f);
+            Color colorFill = color * (outline ? 0.5f : 1.0f);
 
             for (int i = 1; i < count - 1; i++)
             {
@@ -114,7 +114,7 @@ namespace Box2D.XNA.TestBed.Framework
             double increment = Math.PI * 2.0 / (double)segments;
             double theta = 0.0;
 
-            Color colorFill = new Color(color, 0.5f);
+            Color colorFill = color * 0.5f;
 
             Vector2 v0 = center + radius * new Vector2((float)Math.Cos(theta), (float)Math.Sin(theta));
             theta += increment;
@@ -186,8 +186,10 @@ namespace Box2D.XNA.TestBed.Framework
 
         public void FinishDrawShapes()
         {
-            _device.RenderState.CullMode = CullMode.None;
-            _device.RenderState.AlphaBlendEnable = true;
+            _device.BlendState = BlendState.AlphaBlend;
+            
+            //_device.RenderState.CullMode = CullMode.None;
+            //_device.RenderState.AlphaBlendEnable = true;
             
             if (_fillCount > 0)
                 _device.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, _vertsFill, 0, _fillCount);

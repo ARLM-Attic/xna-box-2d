@@ -21,6 +21,7 @@
 */
 
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework;
 
 namespace Box2D.XNA.TestBed.Framework
 {

@@ -77,10 +77,9 @@ namespace Box2D.XNA.TestBed
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
             spriteFont = Content.Load<SpriteFont>("font");
-            simpleColorEffect = new BasicEffect(GraphicsDevice, null);
-            simpleColorEffect.VertexColorEnabled = true;
+            basicEffect = new BasicEffect(GraphicsDevice);
+            basicEffect.VertexColorEnabled = true;
 
-            vertexDecl = new VertexDeclaration(GraphicsDevice, VertexPositionColor.VertexElements);
             Framework.DebugDraw._device = GraphicsDevice;
             Framework.DebugDraw._batch = spriteBatch;
             Framework.DebugDraw._font = spriteFont;
@@ -89,8 +88,6 @@ namespace Box2D.XNA.TestBed
             oldGamePad = GamePad.GetState(PlayerIndex.One);
             Resize(GraphicsDevice.PresentationParameters.BackBufferWidth, GraphicsDevice.PresentationParameters.BackBufferHeight);
         }
-
-        VertexDeclaration vertexDecl;
 
         /// <summary>
         /// UnloadContent will be called once per game and is the place to unload
@@ -227,9 +224,7 @@ namespace Box2D.XNA.TestBed
             et.BeginTrace(TraceEvents.DrawEventId);
             GraphicsDevice.Clear(Color.Black);
 
-            GraphicsDevice.VertexDeclaration = vertexDecl;
-            simpleColorEffect.Begin();
-            simpleColorEffect.Techniques[0].Passes[0].Begin();
+            basicEffect.Techniques[0].Passes[0].Apply();
             
 	        test.SetTextLine(30);
 	        settings.hz = settingsHz;
@@ -251,9 +246,6 @@ namespace Box2D.XNA.TestBed
 	        }
 
             test._debugDraw.FinishDrawShapes();
-
-            simpleColorEffect.Techniques[0].Passes[0].End();
-            simpleColorEffect.End();
 
             if (test != null)
             {
@@ -288,7 +280,7 @@ namespace Box2D.XNA.TestBed
 	        Vector2 upper = viewCenter + extents;
 
 	        // L/R/B/T
-            simpleColorEffect.Parameters["Projection"].SetValue(Matrix.CreateOrthographicOffCenter(lower.X, upper.X, lower.Y, upper.Y, -1, 1));
+            basicEffect.Projection = Matrix.CreateOrthographicOffCenter(lower.X, upper.X, lower.Y, upper.Y, -1, 1);
         }
 
         Vector2 ConvertScreenToWorld(int x, int y)
@@ -400,7 +392,7 @@ namespace Box2D.XNA.TestBed
 
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        BasicEffect simpleColorEffect;
+        BasicEffect basicEffect;
         SpriteFont spriteFont;                
         KeyboardState oldState;
         GamePadState oldGamePad;
